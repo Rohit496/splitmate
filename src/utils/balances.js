@@ -34,8 +34,14 @@ export function expenseShares(expense) {
  *   positive -> the group owes them
  *   negative -> they owe the group
  * The values always sum to zero.
+ *
+ * `settlements` are recorded payments that offset a debt exactly like a
+ * payment would: the payer's net position rises (their debt shrinks) and the
+ * receiver's falls (they've already been paid, so they're owed less).
+ * Optional, defaults to `[]` so any call site that hasn't been updated yet
+ * still works.
  */
-export function netBalances(memberEmails, expenses) {
+export function netBalances(memberEmails, expenses, settlements = []) {
   const net = new Map(memberEmails.map((email) => [email, 0]))
   const add = (email, cents) => net.set(email, (net.get(email) ?? 0) + cents)
 
@@ -60,6 +66,11 @@ export function netBalances(memberEmails, expenses) {
        settlement in the group wrong. */
     const residual = totalCents - assigned
     if (residual !== 0) add(expense.paidBy, -residual)
+  }
+
+  for (const settlement of settlements) {
+    add(settlement.fromEmail, settlement.amountCents)
+    add(settlement.toEmail, -settlement.amountCents)
   }
 
   return net
@@ -92,7 +103,11 @@ export function simplifySettlements(net) {
   while (d < debtors.length && c < creditors.length) {
     const amount = Math.min(debtors[d].cents, creditors[c].cents)
     if (amount > 0) {
-      settlements.push({ from: debtors[d].email, to: creditors[c].email, cents: amount })
+      settlements.push({
+        from: debtors[d].email,
+        to: creditors[c].email,
+        cents: amount,
+      })
     }
     debtors[d].cents -= amount
     creditors[c].cents -= amount
@@ -104,14 +119,14 @@ export function simplifySettlements(net) {
 }
 
 /** Everything a group view needs: each member's net, plus the transfers to settle. */
-export function groupBalances(memberEmails, expenses) {
-  const net = netBalances(memberEmails, expenses)
+export function groupBalances(memberEmails, expenses, settlements = []) {
+  const net = netBalances(memberEmails, expenses, settlements)
   return { net, settlements: simplifySettlements(net) }
 }
 
 /** One member's net position in a group, in cents. */
-export function balanceFor(email, memberEmails, expenses) {
-  return netBalances(memberEmails, expenses).get(email) ?? 0
+export function balanceFor(email, memberEmails, expenses, settlements = []) {
+  return netBalances(memberEmails, expenses, settlements).get(email) ?? 0
 }
 
 /**

@@ -98,6 +98,7 @@ export function upsertUserProfile({ id, name, email }) {
 
 let groupsCache = []
 let expensesCache = []
+let settlementsCache = []
 let syncPromise = null
 
 const GROUP_SELECT = `
@@ -109,6 +110,10 @@ const EXPENSE_SELECT = `
   id, group_id, description, amount, paid_by, participants, split_mode,
   category, date, created_by, created_at, is_deleted, deleted_at, deleted_by,
   expense_splits ( email, amount_cents )
+`
+
+const SETTLEMENT_SELECT = `
+  id, group_id, from_email, to_email, amount_cents, created_by, created_at
 `
 
 function mapGroupRow(row) {
@@ -177,6 +182,18 @@ function mapExpenseRow(row, userIndex) {
   }
 }
 
+function mapSettlementRow(row, userIndex) {
+  return {
+    id: row.id,
+    groupId: row.group_id,
+    fromEmail: row.from_email,
+    toEmail: row.to_email,
+    amountCents: row.amount_cents,
+    recordedBy: userIndex.get(row.created_by)?.email ?? row.created_by,
+    createdAt: row.created_at,
+  }
+}
+
 async function fetchGroups() {
   const { data, error } = await supabase
     .from('groups')
@@ -197,10 +214,21 @@ async function fetchExpenses(userIndex) {
   return (data ?? []).map((row) => mapExpenseRow(row, userIndex))
 }
 
+/** No groupId filter needed client-side — RLS already restricts these rows
+ *  to groups the current user belongs to (same as fetchExpenses). */
+async function fetchSettlements(userIndex) {
+  const { data, error } = await supabase
+    .from('settlements')
+    .select(SETTLEMENT_SELECT)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((row) => mapSettlementRow(row, userIndex))
+}
+
 /**
- * Refetches groups + expenses for whoever's signed in and swaps the cache in
- * one go, then notifies subscribers. Concurrent callers share one in-flight
- * fetch instead of each firing their own.
+ * Refetches groups + expenses + settlements for whoever's signed in and swaps
+ * the cache in one go, then notifies subscribers. Concurrent callers share
+ * one in-flight fetch instead of each firing their own.
  */
 function scheduleSync() {
   if (!currentUserId) return Promise.resolve()
@@ -215,9 +243,12 @@ function scheduleSync() {
 async function performSync() {
   try {
     const groups = await fetchGroups()
-    const expenses = await fetchExpenses(buildUserIndex(groups))
+    const userIndex = buildUserIndex(groups)
+    const expenses = await fetchExpenses(userIndex)
+    const settlements = await fetchSettlements(userIndex)
     groupsCache = groups
     expensesCache = expenses
+    settlementsCache = settlements
   } catch (error) {
     // Keep serving the previous cache rather than wiping good data on a
     // transient failure (offline, RLS hiccup, etc.) — nothing here can
@@ -330,14 +361,12 @@ export function createGroup({ name, creatorEmail, memberEmails = [] }) {
   bump()
   ;(async () => {
     try {
-      const { error: groupError } = await supabase
-        .from('groups')
-        .insert({
-          id: groupId,
-          name: group.name,
-          created_by: currentUserId,
-          created_at: now,
-        })
+      const { error: groupError } = await supabase.from('groups').insert({
+        id: groupId,
+        name: group.name,
+        created_by: currentUserId,
+        created_at: now,
+      })
       if (groupError) throw groupError
 
       const memberRows = unique.map((email) => ({
@@ -519,4 +548,66 @@ export function deleteExpense(expenseId, deletedBy) {
       scheduleSync()
     }
   })()
+}
+
+/* ------------------------------------------------------------- settlements */
+
+/** Recorded settlements for a group, newest first. Permanent history — never deleted. */
+export function listSettlements(groupId) {
+  return settlementsCache
+    .filter((settlement) => settlement.groupId === groupId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+/**
+ * Records that `fromEmail` paid `toEmail` `amountCents` to settle a debt in
+ * the group — offsets the balance exactly like a payment would. Optimistic,
+ * same pattern as createExpense/deleteExpense: client-generated id, immediate
+ * cache push + bump(), background insert, rollback + bump() on failure.
+ */
+export function recordSettlement({
+  groupId,
+  fromEmail,
+  toEmail,
+  amountCents,
+  recordedBy,
+}) {
+  const id = newId()
+  const now = new Date().toISOString()
+  const record = {
+    id,
+    groupId,
+    fromEmail: normalizeEmail(fromEmail),
+    toEmail: normalizeEmail(toEmail),
+    amountCents: Math.round(amountCents),
+    recordedBy: normalizeEmail(recordedBy),
+    createdAt: now,
+  }
+
+  settlementsCache = [record, ...settlementsCache]
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase.from('settlements').insert({
+        id,
+        group_id: groupId,
+        from_email: record.fromEmail,
+        to_email: record.toEmail,
+        amount_cents: record.amountCents,
+        created_by: currentUserId,
+        created_at: now,
+      })
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] recordSettlement failed, rolling back', error)
+      settlementsCache = settlementsCache.filter(
+        (candidate) => candidate.id !== id,
+      )
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
+
+  return record
 }

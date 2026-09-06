@@ -268,6 +268,8 @@ export const content = {
     backToGroups: 'Back to groups',
     expenseAddedToast: 'Expense added',
     expenseDeletedToast: 'Expense deleted',
+    settleUpButton: 'Settle up',
+    settlementRecordedToast: 'Settlement recorded',
   },
 
   addExpenseModal: {
