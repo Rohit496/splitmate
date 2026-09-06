@@ -88,6 +88,7 @@ export default function GroupDetail() {
   const { user } = useAuth()
   const version = useStoreVersion()
   const [isAdding, setIsAdding] = useState(false)
+  const [settlingPairs, setSettlingPairs] = useState(() => new Set())
 
   const data = useMemo(() => {
     const group = storage.getGroup(id)
@@ -150,6 +151,9 @@ export default function GroupDetail() {
   }
 
   function handleSettleUp(settlement) {
+    const pairKey = `${settlement.from}-${settlement.to}`
+    if (settlingPairs.has(pairKey)) return
+    setSettlingPairs((prev) => new Set(prev).add(pairKey))
     storage.recordSettlement({
       groupId: group.id,
       fromEmail: settlement.from,
@@ -335,6 +339,9 @@ export default function GroupDetail() {
                         <Button
                           variant="secondary"
                           onClick={() => handleSettleUp(settlement)}
+                          disabled={settlingPairs.has(
+                            `${settlement.from}-${settlement.to}`,
+                          )}
                         >
                           {copy.settleUpButton}
                         </Button>

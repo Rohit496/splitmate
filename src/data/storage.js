@@ -453,6 +453,15 @@ export function removeMember(groupId, email) {
     throw new Error('Cannot remove — member has existing expenses.')
   }
 
+  const hasSettlements = settlementsCache.some(
+    (settlement) =>
+      settlement.groupId === groupId &&
+      (settlement.fromEmail === target || settlement.toEmail === target),
+  )
+  if (hasSettlements) {
+    throw new Error('Cannot remove — member has existing settlements.')
+  }
+
   const previous = groupsCache
   groupsCache = groupsCache.map((group) =>
     group.id === groupId
@@ -662,6 +671,15 @@ export function recordSettlement({
   amountCents,
   recordedBy,
 }) {
+  /* A non-positive or non-integer amount would corrupt the balance it's meant
+     to offset. Refuse the write rather than let a bad value render, even
+     briefly, before the DB's own CHECK constraint would reject it. */
+  if (!Number.isInteger(amountCents) || amountCents <= 0) {
+    throw new Error(
+      'Settlement amount must be a positive integer number of cents.',
+    )
+  }
+
   const id = newId()
   const now = new Date().toISOString()
   const record = {
@@ -689,7 +707,10 @@ export function recordSettlement({
       })
       if (error) throw error
     } catch (error) {
-      console.error('[storage] recordSettlement failed, rolling back', error)
+      console.error(
+        '[storage] recordSettlement failed, rolling back',
+        error?.message,
+      )
       settlementsCache = settlementsCache.filter(
         (candidate) => candidate.id !== id,
       )
