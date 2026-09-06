@@ -1,3 +1,19 @@
 node_modules/
 dist/
 .sf/
+
+# Supabase project URL + anon key. Not secret (RLS is the real boundary), but
+# kept out of git so each environment/dev supplies its own. See .env.example.
+.env
+
+# Transient Impeccable QA screenshots — not durable project artifacts.
+.impeccable/review/
+
+# Bash command log written by the PreToolUse hook in .claude/settings.json.
+.claude/bash-history.log
+
+# Prompt log written by the UserPromptSubmit hook in .claude/settings.json.
+.claude/prompt-history.log
+
+# Log for the SessionEnd hook that runs /update-readme + /update-claude.
+.claude/session-end-doc-update.log

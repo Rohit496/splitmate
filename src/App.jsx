@@ -9,6 +9,8 @@ import RequireAuth from './components/RequireAuth.jsx'
 import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
+import ResetPassword from './pages/ResetPassword.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CreateGroup from './pages/CreateGroup.jsx'
 import GroupDetail from './pages/GroupDetail.jsx'
@@ -26,11 +28,17 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <ToastContainer position={content.toast.position} autoClose={content.toast.durationMs} theme="colored" />
+      <ToastContainer
+        position={content.toast.position}
+        autoClose={content.toast.durationMs}
+        theme="colored"
+      />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/dashboard"
           element={

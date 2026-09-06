@@ -25,9 +25,9 @@ export default function Register() {
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    const result = register(form)
+    const result = await register(form)
     if (!result.ok) {
       setError(result.error)
       return
@@ -43,7 +43,10 @@ export default function Register() {
       footer={
         <>
           {copy.footerPrompt}{' '}
-          <Link to="/login" className="font-medium text-primary hover:text-primary-hover">
+          <Link
+            to="/login"
+            className="font-medium text-primary hover:text-primary-hover"
+          >
             {copy.footerLink}
           </Link>
         </>
@@ -71,7 +74,11 @@ export default function Register() {
           />
         </Field>
 
-        <Field label={copy.passwordLabel} id="register-password" hint={copy.passwordHint}>
+        <Field
+          label={copy.passwordLabel}
+          id="register-password"
+          hint={copy.passwordHint}
+        >
           <TextInput
             id="register-password"
             type="password"

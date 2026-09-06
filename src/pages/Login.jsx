@@ -20,9 +20,9 @@ export default function Login() {
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    const result = login({ email, password })
+    const result = await login({ email, password })
     if (!result.ok) {
       setError(result.error)
       return
@@ -38,7 +38,10 @@ export default function Login() {
       footer={
         <>
           {copy.footerPrompt}{' '}
-          <Link to="/register" className="font-medium text-primary hover:text-primary-hover">
+          <Link
+            to="/register"
+            className="font-medium text-primary hover:text-primary-hover"
+          >
             {copy.footerLink}
           </Link>
         </>
@@ -72,6 +75,15 @@ export default function Login() {
             }}
           />
         </Field>
+
+        <div className="-mt-2 text-right">
+          <Link
+            to="/forgot-password"
+            className="text-xs font-medium text-primary hover:text-primary-hover"
+          >
+            {copy.forgotPasswordLink}
+          </Link>
+        </div>
 
         <FormError>{error}</FormError>
 
