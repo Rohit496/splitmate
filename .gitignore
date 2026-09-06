@@ -1,3 +1,6 @@
 node_modules/
 dist/
 .sf/
+
+# Transient Impeccable QA screenshots — not durable project artifacts.
+.impeccable/review/

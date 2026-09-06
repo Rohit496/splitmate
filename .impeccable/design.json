@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-06T08:52:25Z",
+  "title": "Design System: Splitmate",
+  "extensions": {
+    "colorMeta": {
+      "ember-orange": { "role": "primary", "displayName": "Ember Orange", "canonical": "oklch(64.6% 0.194 41.1)", "tonalRamp": ["#3d0000", "#640000", "#8c0000", "#b41f00", "#dc4b00", "#ff7133", "#ff975b", "#ffbd82"] },
+      "rust": { "role": "primary", "displayName": "Rust", "canonical": "oklch(55.3% 0.174 38.4)", "tonalRamp": ["#390000", "#5f0000", "#860000", "#ad2c00", "#d55325", "#fd784c", "#ff9d70", "#ffc295"] },
+      "warm-paper": { "role": "neutral", "displayName": "Warm Paper", "canonical": "oklch(97.6% 0.004 91.4)", "tonalRamp": ["#0c0b09", "#262523", "#434240", "#62615f", "#838280", "#a6a5a2", "#cac9c6", "#efeeeb"] },
+      "pure-white": { "role": "neutral", "displayName": "Pure White", "canonical": "oklch(100.0% 0.000 89.9)", "tonalRamp": ["#0b0b0b", "#252525", "#424242", "#616161", "#828282", "#a5a5a5", "#c9c9c9", "#eeeeee"] },
+      "warm-sand": { "role": "neutral", "displayName": "Warm Sand", "canonical": "oklch(92.0% 0.009 78.3)", "tonalRamp": ["#0d0b07", "#282520", "#45413d", "#64615b", "#85827c", "#a8a49f", "#ccc8c3", "#f2eee8"] },
+      "espresso": { "role": "neutral", "displayName": "Espresso", "canonical": "oklch(21.6% 0.006 56.0)", "tonalRamp": ["#0d0b09", "#272422", "#45413f", "#64605e", "#85817f", "#a8a4a1", "#ccc8c5", "#f2edeb"] },
+      "warm-taupe": { "role": "neutral", "displayName": "Warm Taupe", "canonical": "oklch(55.3% 0.012 58.1)", "tonalRamp": ["#0f0a07", "#2a2420", "#47413c", "#67605b", "#88817c", "#aba39e", "#cfc7c2", "#f5ede7"] },
+      "dusty-stone": { "role": "neutral", "displayName": "Dusty Stone", "canonical": "oklch(71.6% 0.009 56.3)", "tonalRamp": ["#0e0a08", "#292421", "#46413d", "#65605c", "#87817d", "#aaa4a0", "#cec8c4", "#f3ede9"] },
+      "mint-bg": { "role": "secondary", "displayName": "Mint", "canonical": "oklch(97.9% 0.021 166.1)", "tonalRamp": ["#040e09", "#1b2823", "#38463f", "#57655e", "#77867f", "#9aa9a2", "#bdcec6", "#e2f3eb"] },
+      "deep-emerald": { "role": "secondary", "displayName": "Deep Emerald", "canonical": "oklch(43.2% 0.086 166.9)", "tonalRamp": ["#001404", "#00311c", "#005038", "#237157", "#499377", "#6cb79a", "#91dcbd", "#b6ffe2"] },
+      "blush-bg": { "role": "secondary", "displayName": "Blush", "canonical": "oklch(97.1% 0.013 17.4)", "tonalRamp": ["#100909", "#2b2323", "#493f3f", "#685e5e", "#8a7f7f", "#ada2a2", "#d1c6c6", "#f7ebeb"] },
+      "deep-brick": { "role": "secondary", "displayName": "Deep Brick", "canonical": "oklch(44.4% 0.161 26.9)", "tonalRamp": ["#370000", "#5d0000", "#830004", "#aa2e2a", "#d1534b", "#fa786c", "#ff9c8f", "#ffc2b3"] },
+      "ash-bg": { "role": "neutral", "displayName": "Ash", "canonical": "oklch(97.0% 0.001 106.4)", "tonalRamp": ["#0b0b0b", "#252524", "#424241", "#616160", "#828281", "#a5a5a4", "#c9c9c8", "#eeeeed"] },
+      "slate-stone": { "role": "neutral", "displayName": "Slate Stone", "canonical": "oklch(44.4% 0.010 73.6)", "tonalRamp": ["#0e0b07", "#282420", "#45413c", "#65605b", "#86827c", "#a9a49f", "#cdc8c2", "#f2eee8"] },
+      "cream-bg": { "role": "secondary", "displayName": "Cream", "canonical": "oklch(98.7% 0.021 95.3)", "tonalRamp": ["#0e0b03", "#282519", "#454235", "#656154", "#868274", "#a9a596", "#cdc9ba", "#f3efdf"] },
+      "amber-bark": { "role": "secondary", "displayName": "Amber Bark", "canonical": "oklch(47.3% 0.125 46.2)", "tonalRamp": ["#2d0000", "#500000", "#742400", "#984616", "#be683c", "#e58b5f", "#ffaf82", "#ffd4a6"] },
+      "signal-red": { "role": "tertiary", "displayName": "Signal Red", "canonical": "oklch(57.7% 0.215 27.3)", "tonalRamp": ["#420000", "#6b0000", "#940000", "#bd0000", "#e73430", "#ff5f54", "#ff8778", "#ffae9c"] },
+      "deep-red": { "role": "tertiary", "displayName": "Deep Red", "canonical": "oklch(50.5% 0.190 27.5)", "tonalRamp": ["#3d0000", "#650000", "#8c0000", "#b51517", "#dd453c", "#ff6c5f", "#ff9182", "#ffb8a6"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The landing headline and a group's headline balance figure only." },
+      "headline": { "displayName": "Headline", "purpose": "Every page's <h1>." },
+      "title": { "displayName": "Title", "purpose": "Section headings within a page, and modal titles." },
+      "body": { "displayName": "Body", "purpose": "Paragraph copy." },
+      "label": { "displayName": "Label", "purpose": "Buttons, form labels, nav items, in-app UI chrome." },
+      "micro": { "displayName": "Micro", "purpose": "Timestamps, hints, badges, tags." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "veil-in", "value": "opacity 0 -> 1, 140ms ease-out", "purpose": "Modal backdrop entrance." },
+      { "name": "sheet-in", "value": "opacity 0 -> 1 + translateY(8px) -> 0, 160ms cubic-bezier(0.2, 0.7, 0.3, 1)", "purpose": "Modal panel entrance, paired with veil-in." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The default action on every screen — get started, sign in, add expense, save.",
+      "html": "<button class=\"ds-btn-primary\">Get started</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--color-primary, #ea580c); color: #fff; border: none; border-radius: var(--radius-control, 8px); padding: 10px 16px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: background-color 150ms; cursor: pointer; } .ds-btn-primary:hover { background: var(--color-primary-hover, #c2410c); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-primary, #ea580c); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The paired lesser action beside a primary button.",
+      "html": "<button class=\"ds-btn-secondary\">Sign in</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--color-surface, #fff); color: var(--color-ink, #1c1917); border: 1px solid var(--color-line, #e8e4de); border-radius: var(--radius-control, 8px); padding: 10px 16px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: background-color 150ms; cursor: pointer; } .ds-btn-secondary:hover { background: var(--color-canvas, #f8f7f4); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-primary, #ea580c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Reserved for the one destructive confirmation: delete.",
+      "html": "<button class=\"ds-btn-danger\">Delete</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--color-danger, #dc2626); color: #fff; border: none; border-radius: var(--radius-control, 8px); padding: 10px 16px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: background-color 150ms; cursor: pointer; } .ds-btn-danger:hover { background: var(--color-danger-hover, #b91c1c); } .ds-btn-danger:focus-visible { outline: 2px solid var(--color-danger, #dc2626); outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The one container surface in the app — group cards, expense rows' wrapper, the landing product demo panel.",
+      "html": "<div class=\"ds-card\">Card content</div>",
+      "css": ".ds-card { background: var(--color-surface, #fff); border: 1px solid var(--color-line, #e8e4de); border-radius: var(--radius-card, 12px); padding: 20px; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field used across every form (auth, add-expense, create-group).",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Dinner at Antares\" />",
+      "css": ".ds-input { width: 100%; background: var(--color-surface, #fff); color: var(--color-ink, #1c1917); border: 1px solid var(--color-line, #e8e4de); border-radius: var(--radius-control, 8px); padding: 10px 14px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; transition: border-color 150ms; } .ds-input::placeholder { color: var(--color-ink-muted, #a8a29e); } .ds-input:focus { outline: none; border-color: var(--color-primary, #ea580c); box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12); }"
+    },
+    {
+      "name": "Category Tag",
+      "kind": "chip",
+      "refersTo": "category-tag",
+      "description": "One neutral tone for every expense category — no per-category color coding, ever.",
+      "html": "<span class=\"ds-tag\">Food &amp; Drinks</span>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; background: var(--color-flat-bg, #f5f5f4); color: var(--color-flat-fg, #57534e); border-radius: 9999px; padding: 2px 8px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "A group member's status: only two states exist, active and pending.",
+      "html": "<span class=\"ds-status-badge ds-status-badge--active\">Active</span> <span class=\"ds-status-badge ds-status-badge--pending\">Pending</span>",
+      "css": ".ds-status-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; } .ds-status-badge--active { background: var(--color-pos-bg, #ecfdf5); color: var(--color-pos-fg, #065f46); } .ds-status-badge--pending { background: var(--color-warn-bg, #fffbeb); color: var(--color-warn-fg, #92400e); }"
+    },
+    {
+      "name": "Balance Pill",
+      "kind": "custom",
+      "refersTo": "balance-pill-credit",
+      "description": "The pill's color IS the balance — settled, owed-to-you, or you-owe — with no separate icon restating it.",
+      "html": "<span class=\"ds-balance-pill ds-balance-pill--credit\">You're owed <b>$42.00</b></span>",
+      "css": ".ds-balance-pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 9999px; padding: 4px 12px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; font-weight: 600; } .ds-balance-pill b { font-variant-numeric: tabular-nums; } .ds-balance-pill--credit { background: var(--color-pos-bg, #ecfdf5); color: var(--color-pos-fg, #065f46); } .ds-balance-pill--debit { background: var(--color-neg-bg, #fef2f2); color: var(--color-neg-fg, #991b1b); } .ds-balance-pill--settled { background: var(--color-flat-bg, #f5f5f4); color: var(--color-flat-fg, #57534e); }"
+    },
+    {
+      "name": "Avatar",
+      "kind": "custom",
+      "refersTo": "avatar",
+      "description": "Initials only, one neutral treatment for every person — no per-user color coding.",
+      "html": "<span class=\"ds-avatar\">RK</span>",
+      "css": ".ds-avatar { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9999px; background: var(--color-stone-100, #f5f5f4); color: var(--color-stone-600, #57534e); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 600; }"
+    },
+    {
+      "name": "Modal Sheet",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "The dialog shell: a bottom sheet under 640px, a centered card at sm: and up, always over a fading veil.",
+      "html": "<div class=\"ds-modal-veil\"><div class=\"ds-modal-sheet\"><h2 class=\"ds-modal-title\">Delete this expense?</h2><p class=\"ds-modal-body\">This can't be undone.</p><div class=\"ds-modal-actions\"><button class=\"ds-btn-secondary\">Cancel</button><button class=\"ds-btn-danger\">Delete</button></div></div></div>",
+      "css": ".ds-modal-veil { position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.4); padding: 24px; border-radius: 12px; } .ds-modal-sheet { width: 100%; max-width: 380px; background: var(--color-surface, #fff); border-radius: var(--radius-modal, 16px); padding: 24px; } .ds-modal-title { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 18px; font-weight: 600; color: var(--color-ink, #1c1917); margin: 0; } .ds-modal-body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; margin: 6px 0 0; font-size: 14px; color: var(--color-ink-soft, #78716c); } .ds-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Friendly Tab",
+    "overview": "Splitmate looks like the running tab a group of friends keeps between themselves — plain, warm, and legible, never a finance product performing trustworthiness at you. One confident orange carries every interactive moment (the mascot, the buttons, a focused field, an active link); every other surface stays warm-neutral paper and ink so that orange never has to compete for attention. The system is deliberately flat: no shadow, glow, or gradient anywhere — separation comes from a single hairline border and the contrast between the warm page canvas and white cards, the way a receipt sits on a table rather than floating above it.\n\nType is a single sans face (Inter) at six fixed sizes and nothing else; components are soft and approachable — generously rounded, generously padded — but restrained, never playful or bouncy. Money is the one thing that gets a structural guarantee: every figure renders in tabular numerals so a column of amounts always lines up, and its color is never decorative, only ever reporting whether a balance is owed, owed-to-you, or settled. Motion is used exactly twice — a modal veil fades in, its sheet rises and settles — and respects reduced-motion; nothing else in the app animates.",
+    "keyCharacteristics": [
+      "One accent color, reserved entirely for interaction and state — never decoration.",
+      "Flat by construction: depth is a border and a background shift, not a shadow.",
+      "A six-step type scale, one typeface, no display face.",
+      "Money always tabular, always colored by what it means, never by taste.",
+      "Soft, rounded, generously-padded components; nothing sharp or clinical."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Ember Orange appears only on buttons, links, a focused input, and active state. If something on screen is orange, it is either asking to be clicked or telling you it already was.", "section": "colors" },
+      { "name": "The Signal, Not Style Rule", "body": "Every non-neutral color besides Ember Orange exists to report a fact (owed / owes / pending / destructive) — never to decorate a card, a heading, or an icon.", "section": "colors" },
+      { "name": "The Six-Step Rule", "body": "The entire app draws from six font sizes (12/14/16/18/24/30px) and no others. A seventh size is never introduced for a one-off heading.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "No component ever gains a box-shadow. If something needs to look \"raised,\" give it a border and a lighter background instead.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do reserve Ember Orange for buttons, links, a focused input, and active state — nowhere else.",
+      "Do render every money figure with tabular numerals (the .num utility) and one of the four financial-state colors.",
+      "Do build new surfaces from the three-step radius scale (8/12/16px) plus full pills — never an arbitrary corner radius.",
+      "Do convey elevation with a border and a background shift, never a shadow."
+    ],
+    "donts": [
+      "Don't add a box-shadow, glow, or gradient anywhere in the app.",
+      "Don't invent a per-category or per-user color — categories and avatars share one neutral (Ash/Slate Stone) tone by design.",
+      "Don't introduce a type size outside the six-step scale (12/14/16/18/24/30px).",
+      "Don't use Signal Red (or its hover) outside a destructive-confirmation flow — it is not a general-purpose \"error\" color; form errors use Deep Brick/Blush instead."
+    ]
+  }
+}

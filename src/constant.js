@@ -44,11 +44,14 @@ export const content = {
 
   landing: {
     headerSignIn: 'Sign in',
-    headline: 'Five dinners. One payment.',
-    intro:
-      'Splitmate keeps the running tab for a group of friends — who paid, who was there, what each share came to — then works out the smallest set of transfers that clears it.',
+
+    // Hero
+    headline: 'Split it. Settle it. Move on.',
+    subhead:
+      'Splitmate keeps the running tab for your trip, your flat, or your group — who paid, who was in on it, what everyone owes — then works out the fewest payments that clear it. No spreadsheet, no chasing anyone down.',
     getStarted: 'Get started',
     signIn: 'Sign in',
+    demoCaption: 'A real settle-up, not a mockup',
     demoGroupName: 'Goa trip',
     demoPeopleCount: (count) => `${count} people`,
     demoExpenses: [
@@ -59,21 +62,58 @@ export const content = {
     settlesAs: 'Settles as',
     demoSettlementLabel: 'Bob owes Shubham',
     demoSettlementCents: 20000,
-    capabilities: [
+
+    // How it works
+    howItWorksHeading: 'How it works',
+    steps: [
       {
-        title: 'Groups',
-        body: 'Start one for the trip, the flat, the weekend. Add people by email — they can be on the list before they’ve signed up.',
+        title: 'Create a group',
+        body: 'Name it, then add the people in it by email — even the ones who haven’t signed up yet.',
       },
       {
-        title: 'Shared expenses',
-        body: 'Record what it cost, who paid, and who was in on it. Each person’s share is worked out as you type.',
+        title: 'Add an expense',
+        body: 'Say what it cost, who paid, and who it’s split between. Everyone’s share works itself out.',
       },
       {
-        title: 'Who owes what',
-        body: 'Every debt in the group, resolved down to the fewest payments that clear it. No chains of small transfers.',
+        title: 'Settle up',
+        body: 'See who owes who, collapsed into the fewest payments that clear the whole group.',
       },
     ],
-    ctaLine: 'Set up a group in about a minute.',
+
+    // Features — one signature capability, three supporting ones.
+    featuresHeading: 'What makes the math easy',
+    signatureFeature: {
+      title: 'Smart settlements',
+      body: 'Splitmate doesn’t just total up who owes what — it collapses every debt in the group down to the fewest payments that clear it. Six people can owe each other fifteen different ways and still settle in five transfers or fewer, never a chain of small ones.',
+    },
+    features: [
+      {
+        title: 'Pending members',
+        body: 'Add someone by email before they’ve even signed up. They’re counted in every split from day one, and go active the moment they join.',
+      },
+      {
+        title: 'Expense history',
+        body: 'Every expense stays dated and categorized, so nobody has to ask what that $40 was for three weeks later.',
+      },
+      {
+        title: 'Works everywhere',
+        body: 'No app to install. Open it on a phone at the table or a laptop later — it’s the same tab either way.',
+      },
+    ],
+
+    // Proof — the real settlement math, plus one honest, unattributed-to-a-
+    // stranger quote (it's the same demo trip shown in the hero above).
+    proofHeading: 'The fewest payments, guaranteed',
+    proofStatLine:
+      'A group of 6 can owe each other 15 different ways by the end of a trip. Splitmate always settles it in 5 payments or fewer.',
+    proofQuote: 'We used to guess who owed what by the end of the trip. Now we don’t have to.',
+    proofQuoteAttribution: 'Shubham, after the Goa trip above',
+
+    // Final CTA
+    finalCtaHeading: 'Set up your first group in about a minute.',
+    finalCtaBody: 'No credit card, no app to download — everything stays right here in your browser.',
+    finalCtaButton: 'Get started',
+
     footer: 'Splitmate keeps everything in this browser. Nothing is sent anywhere.',
   },
 
