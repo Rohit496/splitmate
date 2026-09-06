@@ -9,6 +9,10 @@ dist/
 # Transient Impeccable QA screenshots — not durable project artifacts.
 .impeccable/review/
 
+# Snapshots/console logs written by the Playwright MCP tool during ad hoc
+# testing — not durable project artifacts.
+.playwright-mcp/
+
 # Bash command log written by the PreToolUse hook in .claude/settings.json.
 .claude/bash-history.log
 
@@ -17,3 +21,7 @@ dist/
 
 # Log for the SessionEnd hook that runs /update-readme + /update-claude.
 .claude/session-end-doc-update.log
+
+# Local git worktrees created for isolated subagent work (Agent tool,
+# isolation: "worktree") — ephemeral, never meant to be committed.
+.claude/worktrees/

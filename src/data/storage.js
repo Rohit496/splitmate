@@ -98,6 +98,7 @@ export function upsertUserProfile({ id, name, email }) {
 
 let groupsCache = []
 let expensesCache = []
+let settlementsCache = []
 let syncPromise = null
 
 const GROUP_SELECT = `
@@ -109,6 +110,10 @@ const EXPENSE_SELECT = `
   id, group_id, description, amount, paid_by, participants, split_mode,
   category, date, created_by, created_at, is_deleted, deleted_at, deleted_by,
   expense_splits ( email, amount_cents )
+`
+
+const SETTLEMENT_SELECT = `
+  id, group_id, from_email, to_email, amount_cents, created_by, created_at
 `
 
 function mapGroupRow(row) {
@@ -177,6 +182,18 @@ function mapExpenseRow(row, userIndex) {
   }
 }
 
+function mapSettlementRow(row, userIndex) {
+  return {
+    id: row.id,
+    groupId: row.group_id,
+    fromEmail: row.from_email,
+    toEmail: row.to_email,
+    amountCents: row.amount_cents,
+    recordedBy: userIndex.get(row.created_by)?.email ?? row.created_by,
+    createdAt: row.created_at,
+  }
+}
+
 async function fetchGroups() {
   const { data, error } = await supabase
     .from('groups')
@@ -197,10 +214,21 @@ async function fetchExpenses(userIndex) {
   return (data ?? []).map((row) => mapExpenseRow(row, userIndex))
 }
 
+/** No groupId filter needed client-side — RLS already restricts these rows
+ *  to groups the current user belongs to (same as fetchExpenses). */
+async function fetchSettlements(userIndex) {
+  const { data, error } = await supabase
+    .from('settlements')
+    .select(SETTLEMENT_SELECT)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((row) => mapSettlementRow(row, userIndex))
+}
+
 /**
- * Refetches groups + expenses for whoever's signed in and swaps the cache in
- * one go, then notifies subscribers. Concurrent callers share one in-flight
- * fetch instead of each firing their own.
+ * Refetches groups + expenses + settlements for whoever's signed in and swaps
+ * the cache in one go, then notifies subscribers. Concurrent callers share
+ * one in-flight fetch instead of each firing their own.
  */
 function scheduleSync() {
   if (!currentUserId) return Promise.resolve()
@@ -215,9 +243,12 @@ function scheduleSync() {
 async function performSync() {
   try {
     const groups = await fetchGroups()
-    const expenses = await fetchExpenses(buildUserIndex(groups))
+    const userIndex = buildUserIndex(groups)
+    const expenses = await fetchExpenses(userIndex)
+    const settlements = await fetchSettlements(userIndex)
     groupsCache = groups
     expensesCache = expenses
+    settlementsCache = settlements
   } catch (error) {
     // Keep serving the previous cache rather than wiping good data on a
     // transient failure (offline, RLS hiccup, etc.) — nothing here can
@@ -239,6 +270,11 @@ export function listUsers() {
     })
   }
   for (const group of groupsCache) {
+    // Only trust a group's member list if the current user actually belongs
+    // to it — otherwise a stale cache entry for someone else's group could
+    // leak another user's name/status into this browser (see getUserByEmail).
+    if (!group.members.some((member) => member.email === currentUserEmail))
+      continue
     for (const member of group.members) {
       if (member.userId && !byEmail.has(member.email)) {
         byEmail.set(member.email, {
@@ -267,6 +303,11 @@ export function getUserByEmail(email) {
     return { id: currentUserId, name: currentUserName, email: target }
   }
   for (const group of groupsCache) {
+    // Only consider a group the current user is actually a member of — a
+    // stale cache entry from a previous session on this tab shouldn't let a
+    // newly-logged-in user resolve a former group-mate's name/status.
+    if (!group.members.some((member) => member.email === currentUserEmail))
+      continue
     const member = group.members.find((m) => m.email === target && m.userId)
     if (member) return { id: member.userId, name: member.name, email: target }
   }
@@ -330,14 +371,12 @@ export function createGroup({ name, creatorEmail, memberEmails = [] }) {
   bump()
   ;(async () => {
     try {
-      const { error: groupError } = await supabase
-        .from('groups')
-        .insert({
-          id: groupId,
-          name: group.name,
-          created_by: currentUserId,
-          created_at: now,
-        })
+      const { error: groupError } = await supabase.from('groups').insert({
+        id: groupId,
+        name: group.name,
+        created_by: currentUserId,
+        created_at: now,
+      })
       if (groupError) throw groupError
 
       const memberRows = unique.map((email) => ({
@@ -360,6 +399,95 @@ export function createGroup({ name, creatorEmail, memberEmails = [] }) {
   })()
 
   return group
+}
+
+/**
+ * Group creator only — enforced server-side by the `groups_update_creator`
+ * RLS policy (`created_by = auth.uid()`), same helper the rest of this file
+ * relies on rather than trusting the client. Optimistic rename, same pattern
+ * as createGroup.
+ */
+export function renameGroup(groupId, name) {
+  const trimmed = String(name).trim()
+  const previous = groupsCache
+
+  groupsCache = groupsCache.map((group) =>
+    group.id === groupId ? { ...group, name: trimmed } : group,
+  )
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update({ name: trimmed })
+        .eq('id', groupId)
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] renameGroup failed, rolling back', error)
+      groupsCache = previous
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
+/**
+ * Group creator only — enforced server-side by the `group_members_delete_creator`
+ * RLS policy plus a BEFORE DELETE trigger on `group_members` that raises the
+ * same error this throws. Checked synchronously against the in-memory
+ * expensesCache first (no network round trip needed to reject the common
+ * case), mirroring createExpense's split-sum check: this stays a plain throw,
+ * not a rejected promise, so callers keep using try/catch, not await.
+ */
+export function removeMember(groupId, email) {
+  const target = normalizeEmail(email)
+  const hasExpenses = expensesCache.some(
+    (expense) =>
+      expense.groupId === groupId &&
+      !expense.isDeleted &&
+      (expense.paidBy === target ||
+        expense.splits.some((split) => split.email === target)),
+  )
+  if (hasExpenses) {
+    throw new Error('Cannot remove — member has existing expenses.')
+  }
+
+  const hasSettlements = settlementsCache.some(
+    (settlement) =>
+      settlement.groupId === groupId &&
+      (settlement.fromEmail === target || settlement.toEmail === target),
+  )
+  if (hasSettlements) {
+    throw new Error('Cannot remove — member has existing settlements.')
+  }
+
+  const previous = groupsCache
+  groupsCache = groupsCache.map((group) =>
+    group.id === groupId
+      ? {
+          ...group,
+          members: group.members.filter((member) => member.email !== target),
+        }
+      : group,
+  )
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('email', target)
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] removeMember failed, rolling back', error)
+      groupsCache = previous
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
 }
 
 /* ---------------------------------------------------------------- expenses */
@@ -519,4 +647,78 @@ export function deleteExpense(expenseId, deletedBy) {
       scheduleSync()
     }
   })()
+}
+
+/* ------------------------------------------------------------- settlements */
+
+/** Recorded settlements for a group, newest first. Permanent history — never deleted. */
+export function listSettlements(groupId) {
+  return settlementsCache
+    .filter((settlement) => settlement.groupId === groupId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+/**
+ * Records that `fromEmail` paid `toEmail` `amountCents` to settle a debt in
+ * the group — offsets the balance exactly like a payment would. Optimistic,
+ * same pattern as createExpense/deleteExpense: client-generated id, immediate
+ * cache push + bump(), background insert, rollback + bump() on failure.
+ */
+export function recordSettlement({
+  groupId,
+  fromEmail,
+  toEmail,
+  amountCents,
+  recordedBy,
+}) {
+  /* A non-positive or non-integer amount would corrupt the balance it's meant
+     to offset. Refuse the write rather than let a bad value render, even
+     briefly, before the DB's own CHECK constraint would reject it. */
+  if (!Number.isInteger(amountCents) || amountCents <= 0) {
+    throw new Error(
+      'Settlement amount must be a positive integer number of cents.',
+    )
+  }
+
+  const id = newId()
+  const now = new Date().toISOString()
+  const record = {
+    id,
+    groupId,
+    fromEmail: normalizeEmail(fromEmail),
+    toEmail: normalizeEmail(toEmail),
+    amountCents: Math.round(amountCents),
+    recordedBy: normalizeEmail(recordedBy),
+    createdAt: now,
+  }
+
+  settlementsCache = [record, ...settlementsCache]
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase.from('settlements').insert({
+        id,
+        group_id: groupId,
+        from_email: record.fromEmail,
+        to_email: record.toEmail,
+        amount_cents: record.amountCents,
+        created_by: currentUserId,
+        created_at: now,
+      })
+      if (error) throw error
+    } catch (error) {
+      console.error(
+        '[storage] recordSettlement failed, rolling back',
+        error?.message,
+      )
+      settlementsCache = settlementsCache.filter(
+        (candidate) => candidate.id !== id,
+      )
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
+
+  return record
 }

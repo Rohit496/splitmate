@@ -17,7 +17,9 @@ function Figure({ label, cents, tone }) {
   return (
     <div className="rounded-card border border-line bg-surface p-5">
       <p className="text-xs text-ink-muted">{label}</p>
-      <p className={`num mt-1 text-2xl font-extrabold ${tone}`}>{formatMoney(cents)}</p>
+      <p className={`num mt-1 text-2xl font-extrabold ${tone}`}>
+        {formatMoney(cents)}
+      </p>
     </div>
   )
 }
@@ -30,10 +32,14 @@ function GroupRow({ group }) {
         className="flex items-center justify-between gap-4 rounded-card border border-line bg-surface p-5 transition-colors hover:border-ink-muted"
       >
         <div className="min-w-0">
-          <p className="truncate text-lg font-semibold text-ink">{group.name}</p>
+          <p className="truncate text-lg font-semibold text-ink">
+            {group.name}
+          </p>
           <p className="mt-0.5 text-xs text-ink-muted">
             {copy.personCount(group.members.length)}
-            {group.pendingCount > 0 ? copy.pendingSuffix(group.pendingCount) : ''}
+            {group.pendingCount > 0
+              ? copy.pendingSuffix(group.pendingCount)
+              : ''}
             {copy.expenseSuffix(group.expenseCount)}
           </p>
         </div>
@@ -51,20 +57,30 @@ export default function Dashboard() {
   const groups = useMemo(() => {
     return storage.listGroupsForEmail(user.email).map((group) => {
       const expenses = storage.listExpenses(group.id)
+      const settlements = storage.listSettlements(group.id)
       const emails = group.members.map((member) => member.email)
       return {
         ...group,
         expenseCount: expenses.length,
-        pendingCount: group.members.filter((member) => member.status === 'pending').length,
-        balance: balanceFor(user.email, emails, expenses),
+        pendingCount: group.members.filter(
+          (member) => member.status === 'pending',
+        ).length,
+        balance: balanceFor(user.email, emails, expenses, settlements),
       }
     })
   }, [user.email, version])
 
-  const totals = useMemo(() => totalsFor(groups.map((group) => group.balance)), [groups])
+  const totals = useMemo(
+    () => totalsFor(groups.map((group) => group.balance)),
+    [groups],
+  )
 
   const netTone =
-    totals.net > 0 ? 'text-pos-fg' : totals.net < 0 ? 'text-neg-fg' : 'text-flat-fg'
+    totals.net > 0
+      ? 'text-pos-fg'
+      : totals.net < 0
+        ? 'text-neg-fg'
+        : 'text-flat-fg'
 
   return (
     <AppShell>
@@ -87,7 +103,9 @@ export default function Dashboard() {
 
       <div className="mt-8">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-ink">{copy.groupsHeading(groups.length)}</h2>
+          <h2 className="text-lg font-semibold text-ink">
+            {copy.groupsHeading(groups.length)}
+          </h2>
           {groups.length > 0 ? (
             <ButtonLink to="/group/new" variant="secondary" className="gap-2">
               <Plus size={16} />

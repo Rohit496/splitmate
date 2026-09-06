@@ -268,6 +268,31 @@ export const content = {
     backToGroups: 'Back to groups',
     expenseAddedToast: 'Expense added',
     expenseDeletedToast: 'Expense deleted',
+    settleUpButton: 'Settle up',
+    settlementRecordedToast: 'Settlement recorded',
+    exportHistory: 'Export history',
+    exportDisabledTitle: 'Nothing to export yet',
+    historyExportedToast: 'History exported',
+  },
+
+  groupSettings: {
+    back: '← Back to group',
+    heading: 'Group settings',
+    renameHeading: 'Group name',
+    nameLabel: 'Group name',
+    nameRequiredError: 'Give the group a name.',
+    save: 'Save',
+    renameSuccessToast: 'Group renamed',
+    membersHeading: 'Members',
+    you: 'you',
+    creatorTag: 'Creator',
+    remove: 'Remove',
+    removeAria: (name) => `Remove ${name}`,
+    removeConfirmTitle: (name) => `Remove ${name}?`,
+    removeConfirmBody: (name) =>
+      `${name} will no longer be part of this group. This can’t be undone.`,
+    removeConfirmLabel: 'Remove',
+    removeSuccessToast: 'Member removed',
   },
 
   addExpenseModal: {
