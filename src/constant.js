@@ -270,6 +270,9 @@ export const content = {
     expenseDeletedToast: 'Expense deleted',
     settleUpButton: 'Settle up',
     settlementRecordedToast: 'Settlement recorded',
+    exportHistory: 'Export history',
+    exportDisabledTitle: 'Nothing to export yet',
+    historyExportedToast: 'History exported',
   },
 
   groupSettings: {

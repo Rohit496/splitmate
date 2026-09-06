@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { PlusCircle, Settings } from 'lucide-react'
+import { Download, PlusCircle, Settings } from 'lucide-react'
 import * as storage from '../data/storage.js'
+import { downloadGroupHistory } from '../utils/groupExport.js'
 import { useStoreVersion } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
@@ -159,6 +160,11 @@ export default function GroupDetail() {
     toast.success(copy.settlementRecordedToast)
   }
 
+  function handleExportHistory() {
+    downloadGroupHistory(group.id, group.name)
+    toast.success(copy.historyExportedToast)
+  }
+
   return (
     <AppShell>
       <Link
@@ -187,6 +193,19 @@ export default function GroupDetail() {
               <Settings size={16} />
             </Link>
           ) : null}
+          <span
+            title={expenses.length === 0 ? copy.exportDisabledTitle : undefined}
+          >
+            <Button
+              variant="secondary"
+              onClick={handleExportHistory}
+              disabled={expenses.length === 0}
+              className="gap-2"
+            >
+              <Download size={16} />
+              {copy.exportHistory}
+            </Button>
+          </span>
           <Button onClick={() => setIsAdding(true)} className="gap-2">
             <PlusCircle size={16} />
             {copy.addExpense}
