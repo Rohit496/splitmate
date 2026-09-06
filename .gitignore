@@ -4,3 +4,6 @@ dist/
 
 # Transient Impeccable QA screenshots — not durable project artifacts.
 .impeccable/review/
+
+# Bash command log written by the PreToolUse hook in .claude/settings.json.
+.claude/bash-history.log
