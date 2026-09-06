@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Type scale — these six steps are the whole vocabulary. */
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 26px;
+  --text-xl: 24px;
+  --text-xl--line-height: 30px;
+  --text-2xl: 30px;
+  --text-2xl--line-height: 36px;
+
+  /* Surfaces */
+  --color-canvas: #f8f7f4;
+  --color-surface: #ffffff;
+  --color-line: #e8e4de;
+
+  /* Primary — buttons, focus, links, active states. Nothing else. */
+  --color-primary: #ea580c;
+  --color-primary-hover: #c2410c;
+
+  /* Text */
+  --color-ink: #1c1917;
+  --color-ink-soft: #78716c;
+  --color-ink-muted: #a8a29e;
+
+  /* Financial states — balances and money only */
+  --color-pos-bg: #ecfdf5;
+  --color-pos-fg: #065f46;
+  --color-neg-bg: #fef2f2;
+  --color-neg-fg: #991b1b;
+  --color-flat-bg: #f5f5f4;
+  --color-flat-fg: #57534e;
+
+  /* Pending badge */
+  --color-warn-bg: #fffbeb;
+  --color-warn-fg: #92400e;
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+
+  /* Avatars */
+  --color-stone-100: #f5f5f4;
+  --color-stone-600: #57534e;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-modal: 16px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Browsers give links a pointer but leave buttons on the default arrow.
+     Anything clickable should say so on hover. */
+  button,
+  select,
+  summary,
+  [role="button"],
+  label:has(input[type="checkbox"]),
+  label:has(input[type="radio"]),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+@layer utilities {
+  /* Every figure that represents money, so columns of digits line up. */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer utilities {
+  .veil-in {
+    animation: veil-in 140ms ease-out both;
+  }
+
+  .sheet-in {
+    animation: sheet-in 160ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
