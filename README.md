@@ -1,80 +1,126 @@
 # Splitmate
 
-An expense-sharing app for groups of friends. Record who paid for what, and Splitmate
-works out the fewest transfers that settle everyone up.
+Splitmate is a local-only expense-splitting app for a group of friends,
+roommates, or travel companions who want to track shared costs and see who
+owes whom without setting up a server.
 
-Everything runs in the browser — there is no backend. All data is kept in `localStorage`
-and is scoped to whichever browser you open the app in.
+## Features
 
-## Running locally
+- Register and sign in with an email and password
+- Create groups and add members by email — a member can be added before they
+  ever register, and their invite becomes active the moment they sign up
+- Log shared expenses with an equal split or a manual, per-person split
+- Tag each expense with a category (Food & Drinks, Transport, Accommodation,
+  Activities, Shopping, Utilities, Other) and a date
+- See each member's net balance and the fewest payments needed to settle up,
+  recalculated automatically whenever expenses change
+- Delete an expense (soft delete) without losing historical balance accuracy
+- Toast confirmations for sign in, register, create group, add/delete expense,
+  and sign out
+- Everything persists in the browser's `localStorage` and stays in sync
+  across tabs
 
-```bash
-npm install
-npm run dev
-```
+## Tech stack
 
-Then open the URL Vite prints (usually http://localhost:5173).
+- React 19
+- React Router 7 (client-side routing only, `BrowserRouter`)
+- Vite 8 with `@vitejs/plugin-react`
+- Tailwind CSS v4 via `@tailwindcss/vite` (design tokens in `src/index.css`, no `tailwind.config.js`)
+- react-toastify for toast notifications
+- lucide-react for icons
+- `localStorage` as the only data store — no backend, no database
 
-```bash
-npm run build     # production build into dist/
-npm run preview   # serve the production build
-```
+## Getting started
+
+1. Clone the repo
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Run the dev server:
+   ```
+   npm run dev
+   ```
+4. Open http://localhost:5173
 
 ## Test accounts
 
-Four accounts are created the first time the app runs in a browser. They all use the
-password `password`:
+Four accounts are seeded automatically into `localStorage` the first time the
+app loads in a browser:
 
-| Email | Name |
-| --- | --- |
-| shubham@test.com | Shubham |
-| bob@test.com | Bob |
-| rahul@test.com | Rahul |
-| eva@test.com | Eva |
+- shubham@test.com / password
+- bob@test.com / password
+- rahul@test.com / password
+- eva@test.com / password
 
-The sign-in page lists them as one-click fills. To start over, clear the `splitmate.*`
-keys from `localStorage` and reload.
+No setup step is required — just open the app and log in with one of these.
 
 ## Project structure
 
 ```
 src/
-├── data/storage.js       # the only module that touches localStorage
-├── context/              # AuthContext — the only module that handles credentials
-├── hooks/useStore.js     # re-renders components when storage changes
-├── utils/                # money (integer cents) and balance calculation
-├── components/           # shell, modal, balance bar, shared UI
-└── pages/                # landing, login, register, dashboard, group pages
+  main.jsx              entry: StrictMode > BrowserRouter > App
+  App.jsx                routes + ToastContainer, sets document title/meta
+  constant.js             all user-facing copy, grouped by feature
+  index.css              Tailwind v4 @theme design tokens + base layer
+  toast-theme.css         react-toastify palette overrides
+
+  pages/                 one component per route
+  components/            shared UI: AppShell, AuthLayout, modals, ui.jsx primitives
+  context/AuthContext.jsx  auth state + register/login/logout
+  data/storage.js         the only module that touches localStorage
+  hooks/useStore.js       useSyncExternalStore wrapper for storage changes
+  utils/money.js          cents<->dollars conversion, formatting, date helpers
+  utils/balances.js       net balances + debt-simplification algorithm
 ```
 
-Routes: `/` landing, `/login`, `/register`, `/dashboard`, `/group/new`, `/group/:id`.
-Adding an expense is a modal inside the group page, not a route.
+## Available routes
 
-## How it works
+| Route | Page | Auth required |
+|---|---|---|
+| `/` | Landing | No |
+| `/login` | Login | No |
+| `/register` | Register | No |
+| `/dashboard` | Dashboard | Yes |
+| `/group/new` | Create Group | Yes |
+| `/group/:id` | Group Detail | Yes |
+| `*` | redirects to `/` | No |
 
-**Storage.** `src/data/storage.js` is the single boundary. Nothing else reads or writes
-`localStorage`, so moving to Supabase later means rewriting one file. Records live under
-four keys: `splitmate.users`, `splitmate.groups`, `splitmate.expenses`, and
-`splitmate.session`.
+Routes marked "Yes" are wrapped in `RequireAuth`, which redirects to `/login`
+(preserving the intended destination) when no one is signed in.
 
-**Auth.** All credential handling lives in `AuthContext`. Passwords are stored in plain
-text — fine for local testing, and the first thing to change when there is a real backend.
+## Data storage
 
-**Members.** Groups store members by email, because that is the one identifier that exists
-whether or not someone has signed up. A member with no matching account shows as *pending*
-and is still counted in every split; they turn active automatically the moment they
-register with that email.
+Splitmate has no backend. Every record is a plain JSON array under a
+namespaced `localStorage` key, and `src/data/storage.js` is the only module
+allowed to read or write them:
 
-**Money.** All arithmetic runs in integer cents, so splitting $10 three ways gives
-$3.34 / $3.33 / $3.33 rather than a floating-point remainder.
+- `splitmate.users` — registered accounts (name, normalized email, plain-text
+  password, createdAt)
+- `splitmate.groups` — groups, with members stored by email only
+- `splitmate.expenses` — expenses, including soft-deleted ones
+- `splitmate.session` — the id of the currently logged-in user
 
-**Balances.** Every balance is recomputed from the surviving expenses on read — nothing is
-cached. Deleting an expense is a soft delete (`isDeleted: true`); the record stays, it just
-stops counting. Debts are then collapsed by repeatedly matching the largest debtor against
-the largest creditor, which settles a group of *n* people in at most *n − 1* payments: if
-Shubham paid for dinner and Bob paid for the cab, you get one transfer, not two.
+Balances are never stored. `utils/balances.js` recomputes each member's net
+position and the simplified settlement list from the live expense list on
+every read, so adding, editing, or deleting an expense can never leave a
+stale total behind.
 
-## Status
+## Important notes
 
-Feature-complete against the local-storage brief. Next step is moving persistence to
-Supabase behind the existing `storage.js` interface.
+- **Expenses are soft-deleted.** `deleteExpense` only sets `isDeleted: true`
+  (plus `deletedAt`/`deletedBy`); the record is never removed. `listExpenses`
+  filters deleted rows out, but keeping them means past balance calculations
+  stay auditable and nothing is silently lost.
+- **Group members are keyed by email, not by user id.** A group can include
+  someone who hasn't registered yet — `storage.getGroup()` resolves each
+  member at read time against the users table, marking them `active` once a
+  matching account exists and `pending` until then. Nothing needs to be
+  migrated when they sign up; the same email just starts resolving to a real
+  user.
+- **`createExpense` enforces that splits sum to the total, in cents.** This is
+  the one integrity check protecting every balance and settlement computed
+  from the expense list, so it throws rather than let a mismatched record
+  through.
+- **All money math is done in integer cents** (`utils/money.js`), never on
+  raw dollar floats, to avoid rounding errors when splitting unevenly.
