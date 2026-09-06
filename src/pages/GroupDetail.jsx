@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, Settings } from 'lucide-react'
 import * as storage from '../data/storage.js'
 import { useStoreVersion } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -119,12 +119,16 @@ export default function GroupDetail() {
       0,
     )
 
-    return { group, expenses, nameOf, settlements: ranked, total }
+    const isCreator = group.members.some(
+      (member) => member.email === user.email && member.isCreator,
+    )
+
+    return { group, expenses, nameOf, settlements: ranked, total, isCreator }
   }, [id, user.email, version])
 
   if (!data) return <NotFound />
 
-  const { group, expenses, nameOf, settlements, total } = data
+  const { group, expenses, nameOf, settlements, total, isCreator } = data
   const pending = group.members.filter(
     (member) => member.status === 'pending',
   ).length
@@ -173,10 +177,21 @@ export default function GroupDetail() {
             {copy.spentInTotal}
           </p>
         </div>
-        <Button onClick={() => setIsAdding(true)} className="gap-2">
-          <PlusCircle size={16} />
-          {copy.addExpense}
-        </Button>
+        <div className="flex items-center gap-2">
+          {isCreator ? (
+            <Link
+              to={`/group/${group.id}/settings`}
+              aria-label={content.groupSettings.heading}
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-control border border-line bg-surface text-ink-soft transition-colors hover:text-ink"
+            >
+              <Settings size={16} />
+            </Link>
+          ) : null}
+          <Button onClick={() => setIsAdding(true)} className="gap-2">
+            <PlusCircle size={16} />
+            {copy.addExpense}
+          </Button>
+        </div>
       </div>
 
       {/* Members */}

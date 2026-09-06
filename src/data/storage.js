@@ -391,6 +391,86 @@ export function createGroup({ name, creatorEmail, memberEmails = [] }) {
   return group
 }
 
+/**
+ * Group creator only — enforced server-side by the `groups_update_creator`
+ * RLS policy (`created_by = auth.uid()`), same helper the rest of this file
+ * relies on rather than trusting the client. Optimistic rename, same pattern
+ * as createGroup.
+ */
+export function renameGroup(groupId, name) {
+  const trimmed = String(name).trim()
+  const previous = groupsCache
+
+  groupsCache = groupsCache.map((group) =>
+    group.id === groupId ? { ...group, name: trimmed } : group,
+  )
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update({ name: trimmed })
+        .eq('id', groupId)
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] renameGroup failed, rolling back', error)
+      groupsCache = previous
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
+/**
+ * Group creator only — enforced server-side by the `group_members_delete_creator`
+ * RLS policy plus a BEFORE DELETE trigger on `group_members` that raises the
+ * same error this throws. Checked synchronously against the in-memory
+ * expensesCache first (no network round trip needed to reject the common
+ * case), mirroring createExpense's split-sum check: this stays a plain throw,
+ * not a rejected promise, so callers keep using try/catch, not await.
+ */
+export function removeMember(groupId, email) {
+  const target = normalizeEmail(email)
+  const hasExpenses = expensesCache.some(
+    (expense) =>
+      expense.groupId === groupId &&
+      !expense.isDeleted &&
+      (expense.paidBy === target ||
+        expense.splits.some((split) => split.email === target)),
+  )
+  if (hasExpenses) {
+    throw new Error('Cannot remove — member has existing expenses.')
+  }
+
+  const previous = groupsCache
+  groupsCache = groupsCache.map((group) =>
+    group.id === groupId
+      ? {
+          ...group,
+          members: group.members.filter((member) => member.email !== target),
+        }
+      : group,
+  )
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('email', target)
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] removeMember failed, rolling back', error)
+      groupsCache = previous
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
 /* ---------------------------------------------------------------- expenses */
 
 /** Live expenses for a group, newest first. Deleted records never come back. */
