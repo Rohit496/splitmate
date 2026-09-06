@@ -21,3 +21,7 @@ dist/
 
 # Log for the SessionEnd hook that runs /update-readme + /update-claude.
 .claude/session-end-doc-update.log
+
+# Local git worktrees created for isolated subagent work (Agent tool,
+# isolation: "worktree") — ephemeral, never meant to be committed.
+.claude/worktrees/
