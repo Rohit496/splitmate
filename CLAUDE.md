@@ -89,6 +89,45 @@ and `link_new_group_member` (fires BEFORE INSERT on `group_members`, links to
 an already-existing account) — inviting someone before or after they sign up
 both resolve correctly, with nothing to migrate.
 
+`renameGroup(groupId, name)` and `removeMember(groupId, email)` live in
+`storage.js` too, both creator-only. Rename reuses the existing
+`groups_update_creator` policy. Removing a member is blocked — both
+client-side (a synchronous check against the cached expense list, no round
+trip) and by a `BEFORE DELETE` trigger on `group_members`
+(`prevent_member_removal_with_expenses`) — if that email appears as `paid_by`
+or in any `expense_splits` row for a non-deleted expense in that group; the
+required error text is exactly `"Cannot remove — member has existing
+expenses."` DELETE on `group_members` is otherwise restricted to the creator
+via `group_members_delete_creator` (reuses the `is_group_creator` helper).
+This creator/"admin" check is the app's only elevated-permission concept so
+far — `GroupSettings.jsx` gates its whole page on `member.isCreator`,
+redirecting anyone else back to `/group/:id`; extend this same pattern
+(client-side redirect + an RLS policy keyed off `is_group_creator`) for any
+future admin-only action.
+
+**Settlement** — records that a debt was actually paid, so it stops counting
+as owed.
+
+```
+{ id, groupId, fromEmail, toEmail, amountCents, recordedBy (email), createdAt }
+```
+
+Postgres: `public.settlements` (`group_id` → `groups.id` cascade,
+`from_email`, `to_email`, `amount_cents` `check > 0`, `created_by` uuid →
+`users.id`, `created_at`). RLS: SELECT for any group member, INSERT only as
+yourself (`created_by = auth.uid()`) — no UPDATE or DELETE policy at all,
+same permanent-history philosophy as `expenses`. `listSettlements(groupId)` /
+`recordSettlement({...})` in `storage.js` follow the exact optimistic-write
+pattern as `createExpense`/`deleteExpense`.
+
+`utils/balances.js`'s `netBalances`/`groupBalances`/`balanceFor` take an
+optional third `settlements` argument — each settlement offsets its pair's
+net position exactly like a payment would (payer's net increases, receiver's
+decreases), computed fresh on every read same as expense-driven balances.
+Both `GroupDetail.jsx` and `Dashboard.jsx` pass this through, so recording a
+settlement removes it from a group's "Settle up" list _and_ reduces the
+Dashboard's headline figures.
+
 **Expense**
 
 ```
@@ -128,7 +167,8 @@ entry in `splits`.
 ours). `AuthContext` mirrors it into `{ id, name, email }` via `useAuth()`.
 
 **Row Level Security is the real security boundary.** Every table
-(`users`, `groups`, `group_members`, `expenses`, `expense_splits`) has RLS
+(`users`, `groups`, `group_members`, `expenses`, `expense_splits`,
+`settlements`) has RLS
 enabled, scoped to "rows for groups the current `auth.uid()` belongs to" —
 `storage.js`'s own email/groupId filtering on top of that is defensive, not
 the actual boundary. `anon` has zero grants on any of these tables; nothing
@@ -136,20 +176,27 @@ works without a real session.
 
 ## Routes (`src/App.jsx`)
 
-| Path               | Page             | Auth          |
-| ------------------ | ---------------- | ------------- |
-| `/`                | `Landing`        | public        |
-| `/login`           | `Login`          | public        |
-| `/register`        | `Register`       | public        |
-| `/forgot-password` | `ForgotPassword` | public        |
-| `/reset-password`  | `ResetPassword`  | public        |
-| `/dashboard`       | `Dashboard`      | `RequireAuth` |
-| `/group/new`       | `CreateGroup`    | `RequireAuth` |
-| `/group/:id`       | `GroupDetail`    | `RequireAuth` |
-| `*`                | redirect to `/`  | —             |
+| Path                  | Page             | Auth                           |
+| --------------------- | ---------------- | ------------------------------ |
+| `/`                   | `Landing`        | public                         |
+| `/login`              | `Login`          | public                         |
+| `/register`           | `Register`       | public                         |
+| `/forgot-password`    | `ForgotPassword` | public                         |
+| `/reset-password`     | `ResetPassword`  | public                         |
+| `/dashboard`          | `Dashboard`      | `RequireAuth`                  |
+| `/group/new`          | `CreateGroup`    | `RequireAuth`                  |
+| `/group/:id`          | `GroupDetail`    | `RequireAuth`                  |
+| `/group/:id/settings` | `GroupSettings`  | `RequireAuth` (+ creator-only) |
+| `*`                   | redirect to `/`  | —                              |
 
 `RequireAuth` redirects to `/login` (preserving the intended path in router
 state) when `useAuth().isAuthenticated` is false.
+
+`/group/:id/settings` is creator-only, enforced _inside_ `GroupSettings.jsx`
+(not by a separate guard component): not-a-member/nonexistent group renders
+the same "not found" `EmptyState` `GroupDetail.jsx` uses; a member who isn't
+the creator gets `<Navigate to={`/group/${id}`} replace />` instead of an
+error page.
 
 `/reset-password` is public but only functional when reached from the emailed
 "forgot password" link: `supabaseClient.js` has `detectSessionInUrl: true`
@@ -199,12 +246,15 @@ cache update returned immediately; the real Supabase write happens after, in
 the background — see Data models).
 
 **Toasts + confirm modals for actions.** Success paths (sign in, register,
-create group, add/delete expense, sign out) call `toast.success(...)` from
-`react-toastify`; copy comes from `content.*`. Toast look/position/duration
-are themed in `src/toast-theme.css` and configured once via
-`content.toast` in `App.jsx`'s single `<ToastContainer>` — don't add a second
-one. Destructive actions (deleting an expense) go through
-`components/ConfirmModal.jsx` rather than an inline confirm state.
+create group, add/delete expense, sign out, rename group, record a
+settlement) call `toast.success(...)` from `react-toastify`; copy comes from
+`content.*`. Toast look/position/duration are themed in `src/toast-theme.css`
+and configured once via `content.toast` in `App.jsx`'s single
+`<ToastContainer>` — don't add a second one. Destructive actions (deleting an
+expense, removing a group member) go through `components/ConfirmModal.jsx`
+rather than an inline confirm state. Recording a settlement does **not** use
+`ConfirmModal` — it's not a destructive/data-loss action, same reasoning as
+why adding an expense needs no confirmation either.
 
 **Design tokens, not literal colors.** All colors, radii, and type sizes are
 CSS variables in the `@theme` block of `src/index.css` (`--color-primary`,
@@ -260,7 +310,10 @@ badge.
   `VITE_SUPABASE_PUBLISHABLE_KEY`. `src/data/supabaseClient.js` throws at
   import time if either is missing.
 - `.gitignore` also excludes `.playwright-mcp/` (snapshot/console-log output
-  from ad hoc Playwright MCP testing — not a durable project artifact).
+  from ad hoc Playwright MCP testing — not a durable project artifact) and
+  `.claude/worktrees/` (ephemeral worktrees from the Agent tool's
+  `isolation: "worktree"` option, used for running parallel subagents — see
+  Known issues for a mistake this caused before it was gitignored).
 - This project's Supabase email sending is on the low-volume default sender
   (no custom SMTP configured) — repeated signup/password-reset testing can
   trip "email rate limit exceeded." Not a code bug; either wait it out or add
@@ -278,10 +331,22 @@ badge.
   arbitrary email's account status (anti-enumeration). Resolves correctly to
   "active" the moment the group is actually created.
 - **Background write failures are silent.** `createGroup`/`createExpense`/
-  `deleteExpense` roll back their optimistic cache update on a failed
-  Supabase write and `console.error` it, but nothing shows the user a toast —
-  there's no `await`able call site left for that. Would need those three
-  call sites in `CreateGroup.jsx`/`GroupDetail.jsx` to go `async` to fix.
+  `deleteExpense`/`renameGroup`/`removeMember`/`recordSettlement` all roll
+  back their optimistic cache update on a failed Supabase write and
+  `console.error` it, but nothing shows the user a toast — there's no
+  `await`able call site left for that. Would need their call sites to go
+  `async` to fix.
 - One unconfirmed real auth account exists from manual testing:
   `covbnffseyzomobebm@vtmpj.com` — stuck pending email confirmation because
   that confirmation email got rate-limited. Harmless, left as-is.
+- **Running parallel subagents (Agent tool, `isolation: "worktree"`) against
+  this repo**: a worktree's checkout can lag a commit or two behind the
+  branch it forked from (observed once — a just-committed doc update was
+  missing from a worktree that otherwise had all the functional code it
+  needed) — don't rely solely on "read CLAUDE.md first" for critical context
+  in a subagent prompt; restate the load-bearing rules directly too. If
+  multiple such agents drive the app through the _same_ shared browser
+  automation profile, their Supabase sessions can race on token refresh and
+  leave a stale/exhausted one behind afterward — the dashboard silently shows
+  zero groups/balances with no console error. It's a test-harness artifact,
+  not an app bug: sign out and log back in fresh and it resolves immediately.
