@@ -270,6 +270,11 @@ export function listUsers() {
     })
   }
   for (const group of groupsCache) {
+    // Only trust a group's member list if the current user actually belongs
+    // to it — otherwise a stale cache entry for someone else's group could
+    // leak another user's name/status into this browser (see getUserByEmail).
+    if (!group.members.some((member) => member.email === currentUserEmail))
+      continue
     for (const member of group.members) {
       if (member.userId && !byEmail.has(member.email)) {
         byEmail.set(member.email, {
@@ -298,6 +303,11 @@ export function getUserByEmail(email) {
     return { id: currentUserId, name: currentUserName, email: target }
   }
   for (const group of groupsCache) {
+    // Only consider a group the current user is actually a member of — a
+    // stale cache entry from a previous session on this tab shouldn't let a
+    // newly-logged-in user resolve a former group-mate's name/status.
+    if (!group.members.some((member) => member.email === currentUserEmail))
+      continue
     const member = group.members.find((m) => m.email === target && m.userId)
     if (member) return { id: member.userId, name: member.name, email: target }
   }
