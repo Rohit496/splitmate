@@ -1,0 +1,46 @@
+/**
+ * react-toastify ships its own colour palette (generic blue/green/red/yellow)
+ * and a translucent progress bar. This file re-points its CSS variables at
+ * the app's own tokens (defined in index.css) instead, so a toast reads as
+ * part of Splitmate rather than a copy-pasted default.
+ *
+ * Each toast type maps to the app colour already used for that meaning
+ * elsewhere with white text — success/pos-fg, error/danger, warning/warn-fg,
+ * info/primary — so nothing here is a new colour, just a reuse.
+ */
+
+.Toastify__toast-container {
+  --toastify-color-success: var(--color-pos-fg);
+  --toastify-color-error: var(--color-danger);
+  --toastify-color-warning: var(--color-warn-fg);
+  --toastify-color-info: var(--color-primary);
+
+  /* The app has no shadows anywhere; the default toast shadow and gradient
+     progress trail don't belong here either. */
+  --toastify-toast-shadow: none;
+  --toastify-toast-bd-radius: var(--radius-control);
+  --toastify-toast-min-height: auto;
+  --toastify-font-family: var(--font-sans);
+
+  /* Solid white instead of the default 70%-transparent streak, which read as
+     smudgy against a solid background. */
+  --toastify-color-transparent: #ffffff;
+}
+
+.Toastify__toast {
+  font-size: 14px;
+  font-weight: 500;
+  align-items: center;
+}
+
+/* Bright, fully opaque and a touch taller — the default (a 70%-white bar at
+   70% opacity, effectively ~49% overall) was too faint to read at a glance.
+   !important because react-toastify's own rule targets this exact class and
+   otherwise wins the cascade regardless of import order. */
+.Toastify__toast-container .Toastify__progress-bar {
+  opacity: 0.95 !important;
+}
+
+.Toastify__toast-container .Toastify__progress-bar--wrp {
+  height: 4px !important;
+}
