@@ -64,9 +64,12 @@ cache update, background persist, rollback + `console.error` on failure —
 there's no call site left that awaits these, so a failed write has no toast).
 
 **User** — no localStorage mirror anymore. `getUserByEmail()`/`listUsers()`
-resolve only from the in-memory cache (yourself, or anyone you already share a
-group with) — Supabase RLS won't let this browser ask "does this arbitrary
-email have an account" for anyone else (deliberate anti-enumeration
+resolve only from the in-memory cache, and only from a group the _current_
+signed-in user (`currentUserEmail`) is actually a member of — yourself, or
+anyone you already share a group with, checked explicitly inside both
+functions rather than assumed from the cache's contents (see the shared-cache
+convention below). Supabase RLS also won't let this browser ask "does this
+arbitrary email have an account" for anyone else (deliberate anti-enumeration
 boundary). Postgres: `public.users` (`id` = same UUID as `auth.users.id`,
 `name`, `email`, `created_at`), one row per account, created automatically by
 a trigger on `auth.users` insert. No password column — Supabase Auth owns
@@ -234,6 +237,20 @@ cross-tab/cross-device live sync** — the old `storage` event listener doesn't
 apply anymore (data isn't in `localStorage`), and no Supabase Realtime
 subscription has replaced it. A second tab/device only sees a change after
 its own next login or write-triggered resync.
+
+**The shared cache is a module-level singleton — it isn't cleared on
+logout.** `groupsCache`/`expensesCache`/`settlementsCache` only get fully
+replaced by the _next_ login's resync, so for one browser tab's brief window
+between a logout and a different user's next login, they can still hold the
+previous user's data. Any function that scans these caches for data scoped to
+"the current user" must explicitly verify `currentUserEmail` is actually a
+member of the group a match came from — never trust that everything sitting
+in the cache already belongs to whoever's currently signed in.
+`getUserByEmail`/`listUsers` were missing this check and got fixed in a
+security audit (they now skip any group `currentUserEmail` isn't in before
+considering its members); `GroupDetail.jsx`/`GroupSettings.jsx` already had
+the equivalent page-level check. Follow the same pattern in anything new that
+reads these caches.
 
 **`login`/`register`/`requestPasswordReset`/`updatePassword` are `async`**
 (real network calls now, not synchronous `localStorage` reads) — callers must
