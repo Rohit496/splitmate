@@ -10,6 +10,7 @@ import {
   History,
   Smartphone,
   Quote,
+  Circle,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
@@ -26,8 +27,31 @@ const copy = content.landing
 // .impeccable/surfaces/src-pages-landing-jsx.md).
 const WIDE = 'mx-auto w-full max-w-[1120px] px-6 sm:px-8'
 
-const STEP_ICONS = [UserPlus, Receipt, ArrowRightLeft]
-const FEATURE_ICONS = [Clock, History, Smartphone]
+// Keyed by title rather than array position — copy.steps / copy.features
+// (src/constant.js) can be reordered, trimmed, or extended without silently
+// desyncing from their icons. getIcon() falls back to a neutral glyph and
+// warns in dev instead of crashing if a title's icon is ever missing.
+const STEP_ICONS = {
+  'Create a group': UserPlus,
+  'Add an expense': Receipt,
+  'Settle up': ArrowRightLeft,
+}
+const FEATURE_ICONS = {
+  'Pending members': Clock,
+  'Expense history': History,
+  'Works everywhere': Smartphone,
+}
+
+function getIcon(map, title) {
+  const Icon = map[title]
+  if (!Icon) {
+    if (import.meta.env.DEV) {
+      console.warn(`Landing: no icon mapped for "${title}" — falling back to a neutral glyph.`)
+    }
+    return Circle
+  }
+  return Icon
+}
 
 export default function Landing() {
   const { isAuthenticated } = useAuth()
@@ -114,7 +138,7 @@ export default function Landing() {
 
             <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-3">
               {copy.steps.flatMap((step, i) => {
-                const Icon = STEP_ICONS[i]
+                const Icon = getIcon(STEP_ICONS, step.title)
                 const block = (
                   <div
                     key={step.title}
@@ -159,8 +183,8 @@ export default function Landing() {
             </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              {copy.features.map((feature, i) => {
-                const Icon = FEATURE_ICONS[i]
+              {copy.features.map((feature) => {
+                const Icon = getIcon(FEATURE_ICONS, feature.title)
                 return (
                   <div key={feature.title} className="rounded-card border border-line bg-surface p-5">
                     <span className="inline-flex size-9 items-center justify-center rounded-control bg-canvas text-ink-soft">
