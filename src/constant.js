@@ -106,15 +106,18 @@ export const content = {
     proofHeading: 'The fewest payments, guaranteed',
     proofStatLine:
       'A group of 6 can owe each other 15 different ways by the end of a trip. Splitmate always settles it in 5 payments or fewer.',
-    proofQuote: 'We used to guess who owed what by the end of the trip. Now we don’t have to.',
+    proofQuote:
+      'We used to guess who owed what by the end of the trip. Now we don’t have to.',
     proofQuoteAttribution: 'Shubham, after the Goa trip above',
 
     // Final CTA
     finalCtaHeading: 'Set up your first group in about a minute.',
-    finalCtaBody: 'No credit card, no app to download — everything stays right here in your browser.',
+    finalCtaBody:
+      'No credit card, no app to download — everything stays right here in your browser.',
     finalCtaButton: 'Get started',
 
-    footer: 'Splitmate keeps everything in this browser. Nothing is sent anywhere.',
+    footer:
+      'Splitmate keeps everything in this browser. Nothing is sent anywhere.',
   },
 
   login: {
@@ -128,9 +131,43 @@ export const content = {
     footerPrompt: 'New here?',
     footerLink: 'Create an account',
     testAccountsIntro: 'Test accounts — all use the password',
-    testAccountsPassword: 'password',
-    testAccounts: ['shubham@test.com', 'bob@test.com', 'rahul@test.com', 'eva@test.com'],
+    testAccountsPassword: 'password123',
+    testAccounts: [
+      'priya.sharma@example.com',
+      'rahul.verma@example.com',
+      'ananya.iyer@example.com',
+      'karan.mehta@example.com',
+    ],
     welcomeToast: 'Welcome back!',
+    forgotPasswordLink: 'Forgot password?',
+  },
+
+  forgotPassword: {
+    title: 'Reset your password',
+    intro: 'Enter your email and we’ll send you a link to set a new one.',
+    emailLabel: 'Email',
+    emailPlaceholder: 'you@example.com',
+    submit: 'Send reset link',
+    footerPrompt: 'Remembered it?',
+    footerLink: 'Sign in',
+    sentTitle: 'Check your inbox',
+    sentBody: (email) =>
+      `If ${email} has an account, a reset link is on its way.`,
+    sentToast: 'Reset link sent',
+    backToSignIn: 'Back to sign in',
+  },
+
+  resetPassword: {
+    title: 'Set a new password',
+    intro: 'Choose a new password for your account.',
+    passwordLabel: 'New password',
+    passwordPlaceholder: '••••••••',
+    passwordHint: 'At least 6 characters.',
+    confirmLabel: 'Confirm password',
+    confirmPlaceholder: '••••••••',
+    submit: 'Update password',
+    successToast: 'Password updated',
+    mismatchError: 'Passwords don’t match.',
   },
 
   register: {
@@ -163,17 +200,20 @@ export const content = {
     createGroup: 'Create group',
     personCount: (count) => `${count} ${count === 1 ? 'person' : 'people'}`,
     pendingSuffix: (count) => ` · ${count} pending`,
-    expenseSuffix: (count) => ` · ${count} ${count === 1 ? 'expense' : 'expenses'}`,
+    expenseSuffix: (count) =>
+      ` · ${count} ${count === 1 ? 'expense' : 'expenses'}`,
   },
 
   createGroup: {
     back: '← Groups',
     heading: 'New group',
-    intro: 'Name it after the thing you’re splitting, then add everyone who’s in on it.',
+    intro:
+      'Name it after the thing you’re splitting, then add everyone who’s in on it.',
     groupNameLabel: 'Group name',
     groupNamePlaceholder: 'Goa trip',
     membersLabel: 'Add members by email',
-    membersHint: 'One at a time. People who haven’t signed up yet join the group when they register.',
+    membersHint:
+      'One at a time. People who haven’t signed up yet join the group when they register.',
     memberPlaceholder: 'friend@example.com',
     add: 'Add',
     you: 'you',
@@ -199,12 +239,14 @@ export const content = {
     you: 'you',
     pendingNotice:
       'Pending members are counted in every split. They get access once they register with that email.',
-    expensesHeading: (count) => (count > 0 ? `Expenses (${count})` : 'Expenses'),
+    expensesHeading: (count) =>
+      count > 0 ? `Expenses (${count})` : 'Expenses',
     emptyExpensesTitle: 'Nothing on the tab yet',
     emptyExpensesBody:
       'Add the first thing someone paid for and Splitmate will keep the balances from there.',
     payerLine: (payer, date) => `${payer} paid · ${date} · `,
-    customShare: (count) => `${count} custom ${count === 1 ? 'share' : 'shares'}`,
+    customShare: (count) =>
+      `${count} custom ${count === 1 ? 'share' : 'shares'}`,
     equalShare: (count) => `split ${count} ${count === 1 ? 'way' : 'ways'}`,
     remove: 'Remove',
     removeAria: (description) => `Delete ${description}`,
@@ -218,9 +260,11 @@ export const content = {
     youOweLine: (name) => `You owe ${name}`,
     owesYouLine: (name) => `${name} owes you`,
     othersOweLine: (from, to) => `${from} owes ${to}`,
-    paymentsClear: (count) => `${count} ${count === 1 ? 'payment' : 'payments'} clears the whole group.`,
+    paymentsClear: (count) =>
+      `${count} ${count === 1 ? 'payment' : 'payments'} clears the whole group.`,
     notFoundTitle: 'That group isn’t here',
-    notFoundBody: 'It may have been removed, or the link belongs to a group you’re not part of.',
+    notFoundBody:
+      'It may have been removed, or the link belongs to a group you’re not part of.',
     backToGroups: 'Back to groups',
     expenseAddedToast: 'Expense added',
     expenseDeletedToast: 'Expense deleted',
@@ -250,10 +294,13 @@ export const content = {
     descriptionRequiredError: 'Say what the expense was for.',
     amountRequiredError: 'Enter an amount greater than zero.',
     noOneSelectedError: 'Pick at least one person to share it.',
-    invalidShareError: 'Enter a valid amount for everyone sharing this expense.',
+    invalidShareError:
+      'Enter a valid amount for everyone sharing this expense.',
     remainderPositiveError: (amount) => `${amount} still needs to be assigned.`,
-    remainderNegativeError: (amount) => `The shares add up to ${amount} more than the total.`,
-    tallyEqual: (count) => `Split equally between ${count} ${count === 1 ? 'person' : 'people'}`,
+    remainderNegativeError: (amount) =>
+      `The shares add up to ${amount} more than the total.`,
+    tallyEqual: (count) =>
+      `Split equally between ${count} ${count === 1 ? 'person' : 'people'}`,
     tallyNeedTotal: 'Enter a total first',
     tallyRemaining: (amount) => `${amount} left to assign`,
     tallyOver: (amount) => `${amount} over`,
@@ -271,6 +318,9 @@ export const content = {
     passwordTooShortError: 'Use a password of at least 6 characters.',
     emailTakenError: 'That email already has an account. Sign in instead.',
     credentialsMismatchError: 'That email and password don’t match an account.',
+    confirmEmailNotice: 'Check your inbox to confirm your email, then sign in.',
+    resetLinkExpiredError:
+      'This reset link is invalid or has expired. Request a new one.',
   },
 
   statusBadge: {

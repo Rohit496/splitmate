@@ -2,6 +2,10 @@ node_modules/
 dist/
 .sf/
 
+# Supabase project URL + anon key. Not secret (RLS is the real boundary), but
+# kept out of git so each environment/dev supplies its own. See .env.example.
+.env
+
 # Transient Impeccable QA screenshots — not durable project artifacts.
 .impeccable/review/
 
