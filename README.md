@@ -1,24 +1,32 @@
 # Splitmate
 
-Splitmate is a local-only expense-splitting app for a group of friends,
-roommates, or travel companions who want to track shared costs and see who
-owes whom without setting up a server.
+Splitmate is an expense-splitting app for a group of friends, roommates, or
+travel companions who want to track shared costs and see who owes whom.
+Groups, expenses, and accounts are real rows in Supabase (Postgres + Auth)
+behind Row Level Security, not local-only data.
 
 ## Features
 
-- Register and sign in with an email and password
+- Register and sign in with an email and password, plus a "forgot password"
+  email-reset flow
 - Create groups and add members by email — a member can be added before they
   ever register, and their invite becomes active the moment they sign up
 - Log shared expenses with an equal split or a manual, per-person split
 - Tag each expense with a category (Food & Drinks, Transport, Accommodation,
   Activities, Shopping, Utilities, Other) and a date
 - See each member's net balance and the fewest payments needed to settle up,
-  recalculated automatically whenever expenses change
+  recalculated automatically whenever expenses or settlements change
+- Record a settlement ("Settle up") to mark a debt as actually paid, so it
+  stops counting toward what's owed
+- Group settings (creator-only): rename the group, remove a member (blocked
+  if they have existing expenses), and view settlement history
+- Export a group's full expense history as a CSV download
 - Delete an expense (soft delete) without losing historical balance accuracy
 - Toast confirmations for sign in, register, create group, add/delete expense,
-  and sign out
-- Everything persists in the browser's `localStorage` and stays in sync
-  across tabs
+  rename group, record a settlement, and sign out
+- Data lives in Supabase (Postgres + Auth) behind Row Level Security, not in
+  `localStorage` — reads are served from an in-memory cache kept in sync in
+  the background, and writes are optimistic
 
 ## Tech stack
 
@@ -76,15 +84,15 @@ src/
 
 ## Available routes
 
-| Route | Page | Auth required |
-|---|---|---|
-| `/` | Landing | No |
-| `/login` | Login | No |
-| `/register` | Register | No |
-| `/dashboard` | Dashboard | Yes |
-| `/group/new` | Create Group | Yes |
-| `/group/:id` | Group Detail | Yes |
-| `*` | redirects to `/` | No |
+| Route        | Page             | Auth required |
+| ------------ | ---------------- | ------------- |
+| `/`          | Landing          | No            |
+| `/login`     | Login            | No            |
+| `/register`  | Register         | No            |
+| `/dashboard` | Dashboard        | Yes           |
+| `/group/new` | Create Group     | Yes           |
+| `/group/:id` | Group Detail     | Yes           |
+| `*`          | redirects to `/` | No            |
 
 Routes marked "Yes" are wrapped in `RequireAuth`, which redirects to `/login`
 (preserving the intended destination) when no one is signed in.
