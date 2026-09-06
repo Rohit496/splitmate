@@ -14,6 +14,7 @@ import ResetPassword from './pages/ResetPassword.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CreateGroup from './pages/CreateGroup.jsx'
 import GroupDetail from './pages/GroupDetail.jsx'
+import GroupSettings from './pages/GroupSettings.jsx'
 
 export default function App() {
   // index.html carries the same title/description as a static fallback for
@@ -60,6 +61,14 @@ export default function App() {
           element={
             <RequireAuth>
               <GroupDetail />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/group/:id/settings"
+          element={
+            <RequireAuth>
+              <GroupSettings />
             </RequireAuth>
           }
         />

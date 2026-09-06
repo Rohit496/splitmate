@@ -270,6 +270,26 @@ export const content = {
     expenseDeletedToast: 'Expense deleted',
   },
 
+  groupSettings: {
+    back: '← Back to group',
+    heading: 'Group settings',
+    renameHeading: 'Group name',
+    nameLabel: 'Group name',
+    nameRequiredError: 'Give the group a name.',
+    save: 'Save',
+    renameSuccessToast: 'Group renamed',
+    membersHeading: 'Members',
+    you: 'you',
+    creatorTag: 'Creator',
+    remove: 'Remove',
+    removeAria: (name) => `Remove ${name}`,
+    removeConfirmTitle: (name) => `Remove ${name}?`,
+    removeConfirmBody: (name) =>
+      `${name} will no longer be part of this group. This can’t be undone.`,
+    removeConfirmLabel: 'Remove',
+    removeSuccessToast: 'Member removed',
+  },
+
   addExpenseModal: {
     title: 'Add expense',
     close: 'Close',
