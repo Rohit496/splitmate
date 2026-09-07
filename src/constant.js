@@ -56,8 +56,10 @@ export const content = {
   },
 
   nav: {
+    profile: 'Profile',
     signOut: 'Sign out',
     signedOutToast: 'Signed out',
+    accountMenuAria: 'Account menu',
   },
 
   landing: {
