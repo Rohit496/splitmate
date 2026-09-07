@@ -594,6 +594,64 @@ export function updateGroupBudget(groupId, budgetCents) {
 }
 
 /**
+ * Group creator only — enforced server-side by the `group_members_insert_creator`
+ * RLS policy (same is_group_creator check renameGroup's sibling policies
+ * use). Only ever inserts a new group_members row — the new member starts
+ * with zero history: never attached to any existing expense/split/
+ * settlement, only to whatever's created after this.
+ *
+ * Active vs. pending isn't decided here — RLS's anti-enumeration boundary
+ * means getUserByEmail can't reliably tell whether an arbitrary stranger's
+ * email already has an account (see CLAUDE.md known issues), so the
+ * `link_new_group_member` BEFORE INSERT trigger resolves user_id
+ * authoritatively at the database, regardless of what's sent. The
+ * optimistic cache entry below uses getUserByEmail's best-effort guess
+ * purely for instant UI feedback, same as CreateGroup's own invite preview;
+ * scheduleSync() reconciles it to the trigger's real answer moments later.
+ */
+export function addMember(groupId, email) {
+  const normalized = normalizeEmail(email)
+  const known = getUserByEmail(normalized)
+  const previous = groupsCache
+
+  const optimisticMember = {
+    email: normalized,
+    name: known?.name || nameFromEmail(normalized),
+    userId: known?.id ?? null,
+    status: known?.id ? 'active' : 'pending',
+    isCreator: false,
+    addedAt: new Date().toISOString(),
+  }
+
+  groupsCache = groupsCache.map((group) => {
+    if (group.id !== groupId) return group
+    const members = [...group.members, optimisticMember].sort(
+      (a, b) =>
+        Number(b.isCreator) - Number(a.isCreator) ||
+        a.email.localeCompare(b.email),
+    )
+    return { ...group, members }
+  })
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase.from('group_members').insert({
+        group_id: groupId,
+        email: normalized,
+        user_id: known?.id ?? null,
+      })
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] addMember failed, rolling back', error)
+      groupsCache = previous
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
+/**
  * Group creator only — enforced server-side by the `group_members_delete_creator`
  * RLS policy plus a BEFORE DELETE trigger on `group_members` that raises the
  * same error this throws. Checked synchronously against the in-memory

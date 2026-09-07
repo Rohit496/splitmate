@@ -94,29 +94,6 @@ export default function Login() {
           {copy.submit}
         </Button>
       </form>
-
-      <div className="mt-5 border-t border-line pt-5">
-        <p className="text-xs text-ink-muted">
-          {copy.testAccountsIntro}{' '}
-          <span className="num text-ink-soft">{copy.testAccountsPassword}</span>
-        </p>
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {copy.testAccounts.map((account) => (
-            <button
-              key={account}
-              type="button"
-              onClick={() => {
-                setEmail(account)
-                setPassword(copy.testAccountsPassword)
-                setError('')
-              }}
-              className="rounded-full border border-line px-2.5 py-1 text-xs text-ink-soft transition-colors hover:border-primary hover:text-primary"
-            >
-              {account}
-            </button>
-          ))}
-        </div>
-      </div>
     </AuthLayout>
   )
 }
