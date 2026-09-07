@@ -4,12 +4,14 @@ import { toast } from 'react-toastify'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import AuthLayout from '../components/AuthLayout.jsx'
 import { Button, Field, FormError, TextInput } from '../components/ui.jsx'
 
 const copy = content.login
 
 export default function Login() {
+  useDocumentTitle(content.pageTitles.login)
   const { isAuthenticated, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

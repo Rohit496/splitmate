@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import { KeyRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import AuthLayout from '../components/AuthLayout.jsx'
 import { Button, Field, FormError, TextInput } from '../components/ui.jsx'
 
@@ -16,6 +17,7 @@ const copy = content.resetPassword
  * calls supabase.auth.updateUser() against it.
  */
 export default function ResetPassword() {
+  useDocumentTitle(content.pageTitles.resetPassword)
   const { updatePassword } = useAuth()
   const navigate = useNavigate()
 

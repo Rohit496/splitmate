@@ -5,6 +5,7 @@ import { Plus, UserPlus } from 'lucide-react'
 import * as storage from '../data/storage.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import AppShell from '../components/AppShell.jsx'
 import {
   Avatar,
@@ -28,6 +29,7 @@ function describe(email) {
 }
 
 export default function CreateGroup() {
+  useDocumentTitle(content.pageTitles.newGroup)
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -38,7 +40,10 @@ export default function CreateGroup() {
   const [formError, setFormError] = useState('')
 
   const members = useMemo(
-    () => [{ ...describe(user.email), isYou: true }, ...invited.map((email) => describe(email))],
+    () => [
+      { ...describe(user.email), isYou: true },
+      ...invited.map((email) => describe(email)),
+    ],
     [user.email, invited],
   )
 
@@ -86,18 +91,26 @@ export default function CreateGroup() {
     navigate(`/group/${group.id}`, { replace: true })
   }
 
-  const pendingCount = members.filter((member) => member.status === 'pending').length
+  const pendingCount = members.filter(
+    (member) => member.status === 'pending',
+  ).length
 
   return (
     <AppShell>
-      <Link to="/dashboard" className="text-sm text-ink-soft transition-colors hover:text-ink">
+      <Link
+        to="/dashboard"
+        className="text-sm text-ink-soft transition-colors hover:text-ink"
+      >
         {copy.back}
       </Link>
 
       <h1 className="mt-4 text-xl font-bold text-ink">{copy.heading}</h1>
       <p className="mt-1 text-sm text-ink-soft">{copy.intro}</p>
 
-      <form onSubmit={createGroup} className="mt-8 rounded-card border border-line bg-surface p-5">
+      <form
+        onSubmit={createGroup}
+        className="mt-8 rounded-card border border-line bg-surface p-5"
+      >
         <Field label={copy.groupNameLabel} id="group-name">
           <TextInput
             id="group-name"
@@ -157,9 +170,15 @@ export default function CreateGroup() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-ink">
                   {member.name}
-                  {member.isYou ? <span className="ml-1.5 text-xs text-ink-muted">{copy.you}</span> : null}
+                  {member.isYou ? (
+                    <span className="ml-1.5 text-xs text-ink-muted">
+                      {copy.you}
+                    </span>
+                  ) : null}
                 </p>
-                <p className="truncate text-xs text-ink-muted">{member.email}</p>
+                <p className="truncate text-xs text-ink-muted">
+                  {member.email}
+                </p>
               </div>
               <StatusBadge status={member.status} />
               {member.isYou ? null : (
@@ -177,7 +196,9 @@ export default function CreateGroup() {
         </ul>
 
         {pendingCount > 0 ? (
-          <p className="mt-3 text-xs text-ink-muted">{copy.pendingNotice(pendingCount)}</p>
+          <p className="mt-3 text-xs text-ink-muted">
+            {copy.pendingNotice(pendingCount)}
+          </p>
         ) : null}
 
         <div className="mt-4">
