@@ -323,6 +323,13 @@ export const content = {
     budgetSaveSuccessToast: 'Budget updated',
     budgetClearedToast: 'Budget cleared',
     membersHeading: 'Members',
+    addMemberLabel: 'Add member by email',
+    addMemberPlaceholder: 'friend@example.com',
+    addMemberHint:
+      'They start fresh — not added to any expense already on the tab.',
+    add: 'Add',
+    alreadyMemberError: 'That person is already in the group.',
+    addMemberSuccessToast: 'Member added',
     you: 'you',
     creatorTag: 'Creator',
     remove: 'Remove',

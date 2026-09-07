@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { Save } from 'lucide-react'
+import { Save, UserPlus } from 'lucide-react'
 import * as storage from '../data/storage.js'
 import { useStoreVersion, useStoreReady } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -118,6 +118,8 @@ export default function GroupSettings() {
   const [budgetInput, setBudgetInput] = useState('')
   const [budgetSeeded, setBudgetSeeded] = useState(false)
   const [budgetError, setBudgetError] = useState('')
+  const [memberEmail, setMemberEmail] = useState('')
+  const [memberError, setMemberError] = useState('')
 
   const data = useMemo(() => {
     const group = storage.getGroup(id)
@@ -178,6 +180,25 @@ export default function GroupSettings() {
   function handleRemoveMember(email) {
     storage.removeMember(group.id, email)
     toast.success(copy.removeSuccessToast)
+  }
+
+  function handleAddMember(event) {
+    event.preventDefault()
+    const email = storage.normalizeEmail(memberEmail)
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setMemberError(content.auth.invalidEmailError)
+      return
+    }
+    if (group.members.some((member) => member.email === email)) {
+      setMemberError(copy.alreadyMemberError)
+      return
+    }
+
+    storage.addMember(group.id, email)
+    toast.success(copy.addMemberSuccessToast)
+    setMemberEmail('')
+    setMemberError('')
   }
 
   function handleBudgetSave(event) {
@@ -294,6 +315,41 @@ export default function GroupSettings() {
         <h2 className="text-lg font-semibold text-ink">
           {copy.membersHeading}
         </h2>
+
+        <div className="mt-4">
+          <Field
+            label={copy.addMemberLabel}
+            id="group-settings-add-member"
+            error={memberError}
+            hint={copy.addMemberHint}
+          >
+            <div className="flex gap-2">
+              <TextInput
+                id="group-settings-add-member"
+                type="email"
+                placeholder={copy.addMemberPlaceholder}
+                value={memberEmail}
+                onChange={(event) => {
+                  setMemberEmail(event.target.value)
+                  setMemberError('')
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') handleAddMember(event)
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleAddMember}
+                className="shrink-0 gap-2"
+              >
+                <UserPlus size={16} />
+                {copy.add}
+              </Button>
+            </div>
+          </Field>
+        </div>
+
         <ul className="mt-4 overflow-hidden rounded-card border border-line bg-surface">
           {group.members.map((member) => (
             <MemberRow
