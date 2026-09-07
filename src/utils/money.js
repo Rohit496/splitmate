@@ -23,8 +23,20 @@ export function splitEqually(totalCents, count) {
   const total = Math.abs(totalCents)
   const base = Math.floor(total / count)
   const remainder = total - base * count
-  return Array.from({ length: count }, (_, index) =>
-    sign * (base + (index < remainder ? 1 : 0)),
+  return Array.from(
+    { length: count },
+    (_, index) => sign * (base + (index < remainder ? 1 : 0)),
+  )
+}
+
+/**
+ * Sum of every non-deleted expense's amount, in cents — total group spend,
+ * never netted against settlements or per-person shares.
+ */
+export function totalSpentCents(expenses) {
+  return expenses.reduce(
+    (sum, expense) => (expense.isDeleted ? sum : sum + toCents(expense.amount)),
+    0,
   )
 }
 

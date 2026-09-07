@@ -7,6 +7,7 @@ import { useStoreVersion } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
+import { fromCents, toCents } from '../utils/money.js'
 import AppShell from '../components/AppShell.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import {
@@ -17,6 +18,7 @@ import {
   Field,
   FormError,
   StatusBadge,
+  TextButton,
   TextInput,
 } from '../components/ui.jsx'
 
@@ -111,6 +113,9 @@ export default function GroupSettings() {
   const [name, setName] = useState('')
   const [nameSeeded, setNameSeeded] = useState(false)
   const [nameError, setNameError] = useState('')
+  const [budgetInput, setBudgetInput] = useState('')
+  const [budgetSeeded, setBudgetSeeded] = useState(false)
+  const [budgetError, setBudgetError] = useState('')
 
   const data = useMemo(() => {
     const group = storage.getGroup(id)
@@ -131,6 +136,18 @@ export default function GroupSettings() {
     }
   }, [data, nameSeeded])
 
+  // Same one-time-seed rationale as the name field above.
+  useEffect(() => {
+    if (data && !budgetSeeded) {
+      setBudgetInput(
+        data.group.budgetCents != null
+          ? String(fromCents(data.group.budgetCents))
+          : '',
+      )
+      setBudgetSeeded(true)
+    }
+  }, [data, budgetSeeded])
+
   if (!data) return <NotFound />
   if (!data.isCreator) return <Navigate to={`/group/${id}`} replace />
 
@@ -150,6 +167,32 @@ export default function GroupSettings() {
   function handleRemoveMember(email) {
     storage.removeMember(group.id, email)
     toast.success(copy.removeSuccessToast)
+  }
+
+  function handleBudgetSave(event) {
+    event.preventDefault()
+    const trimmed = budgetInput.trim()
+    if (trimmed === '') {
+      storage.updateGroupBudget(group.id, null)
+      toast.success(copy.budgetClearedToast)
+      setBudgetError('')
+      return
+    }
+    const cents = toCents(trimmed)
+    if (!Number.isFinite(cents) || cents <= 0) {
+      setBudgetError(copy.budgetInvalidError)
+      return
+    }
+    storage.updateGroupBudget(group.id, cents)
+    toast.success(copy.budgetSaveSuccessToast)
+    setBudgetError('')
+  }
+
+  function handleClearBudget() {
+    storage.updateGroupBudget(group.id, null)
+    setBudgetInput('')
+    setBudgetError('')
+    toast.success(copy.budgetClearedToast)
   }
 
   return (
@@ -187,6 +230,53 @@ export default function GroupSettings() {
             </Button>
           </div>
         </Field>
+      </form>
+
+      <form
+        onSubmit={handleBudgetSave}
+        className="mt-8 rounded-card border border-line bg-surface p-5"
+      >
+        <Field
+          label={copy.budgetLabel}
+          id="group-settings-budget"
+          hint={copy.budgetHint}
+          error={budgetError}
+        >
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-sm text-ink-muted">
+                $
+              </span>
+              <TextInput
+                id="group-settings-budget"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                className="num pl-7 font-semibold"
+                value={budgetInput}
+                onChange={(event) => {
+                  setBudgetInput(event.target.value)
+                  setBudgetError('')
+                }}
+              />
+            </div>
+            <Button type="submit" className="shrink-0 gap-2">
+              <Save size={16} />
+              {copy.save}
+            </Button>
+          </div>
+        </Field>
+        {group.budgetCents != null ? (
+          <TextButton
+            type="button"
+            className="mt-3"
+            onClick={handleClearBudget}
+          >
+            {copy.budgetClear}
+          </TextButton>
+        ) : null}
       </form>
 
       <section className="mt-8">
