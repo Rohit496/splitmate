@@ -120,7 +120,7 @@ export function hasSyncedOnce() {
 
 const GROUP_SELECT = `
   id, name, created_by, created_at, budget_cents,
-  group_members ( email, user_id, added_at, users ( name ) )
+  group_members ( email, user_id, added_at, users ( name, avatar_path ) )
 `
 
 const EXPENSE_SELECT = `
@@ -141,6 +141,13 @@ function mapGroupRow(row) {
     status: m.user_id ? 'active' : 'pending',
     isCreator: m.user_id != null && m.user_id === row.created_by,
     addedAt: m.added_at,
+    // Cross-member photos — specs/profile.md called this out as a v1
+    // non-goal, since it needed avatar_path threaded through this select.
+    // Same public-bucket URL derivation as AuthContext.toPublicUser.
+    avatarUrl: m.users?.avatar_path
+      ? supabase.storage.from('avatars').getPublicUrl(m.users.avatar_path).data
+          .publicUrl
+      : null,
   }))
   // Insertion order isn't guaranteed back from Postgres; creator-first then
   // alphabetical gives a stable order close to the old array-order behavior.

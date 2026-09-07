@@ -59,7 +59,7 @@ function MemberRow({ member, isYou, onRemove }) {
   return (
     <li className="border-t border-line px-5 py-3 first:border-t-0">
       <div className="flex items-center gap-3">
-        <Avatar name={member.name} />
+        <Avatar name={member.name} src={member.avatarUrl} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm text-ink">
             {member.name}
