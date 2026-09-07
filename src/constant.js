@@ -37,6 +37,7 @@ export const content = {
     groupDetail: (groupName) => `${groupName} | Splitmate`,
     groupSettings: 'Group Settings | Splitmate',
     reports: 'Reports | Splitmate',
+    profile: 'Profile | Splitmate',
   },
 
   categories: {
@@ -428,6 +429,65 @@ export const content = {
     confirmEmailNotice: 'Check your inbox to confirm your email, then sign in.',
     resetLinkExpiredError:
       'This reset link is invalid or has expired. Request a new one.',
+  },
+
+  profile: {
+    heading: 'Profile',
+    intro: 'Your account details.',
+
+    // Personal details card — photo, email, name, mobile all live here as
+    // one section; a single Save button handles email/name/mobile together
+    // (photo has its own immediate Change/Remove actions, since a file
+    // picker doesn't defer to a later Save the way text fields do).
+    detailsHeading: 'Personal details',
+    joinedLabel: 'Member since',
+    save: 'Save',
+    detailsSavedToast: 'Details updated',
+
+    // Photo
+    changePhoto: 'Change photo',
+    removePhoto: 'Remove photo',
+    photoUpdatedToast: 'Photo updated',
+    photoRemovedToast: 'Photo removed',
+    photoTypeError: 'Choose a JPEG, PNG, or WebP image.',
+    photoTooLargeError: 'Image must be under 2 MB.',
+    photoUploadFailedError: 'Couldn’t upload your photo. Try again.',
+
+    // Email
+    emailLabel: 'Email',
+    emailChangeHint:
+      'Changing your email sends a confirmation link to the new address before it takes effect.',
+    emailChangeRequestedToast: 'Check your inbox to confirm your new email.',
+    emailSameError: 'That’s already your email.',
+    emailTakenError: 'That email already has an account.',
+    emailSaveFailedError: 'Couldn’t update your email. Try again.',
+
+    // Name
+    firstNameLabel: 'First name',
+    lastNameLabel: 'Last name',
+    firstNameRequiredError: 'Enter your first name.',
+    nameTooLongError: 'Keep your name under 60 characters.',
+    nameSaveFailedError: 'Couldn’t save your name. Try again.',
+
+    // Mobile
+    mobileLabel: 'Mobile number',
+    mobileHint: 'Optional.',
+    mobileSaveFailedError: 'Couldn’t save your mobile number. Try again.',
+
+    // Password
+    passwordHeading: 'Change password',
+    currentPasswordLabel: 'Current password',
+    newPasswordLabel: 'New password',
+    confirmPasswordLabel: 'Confirm new password',
+    passwordHint: 'At least 6 characters.',
+    passwordPlaceholder: '••••••••',
+    updatePassword: 'Update password',
+    passwordSavedToast: 'Password updated',
+    currentPasswordRequiredError: 'Enter your current password.',
+    currentPasswordWrongError: 'That doesn’t match your current password.',
+    mismatchError: 'Passwords don’t match.',
+    samePasswordError: 'Choose a password different from your current one.',
+    passwordSaveFailedError: 'Couldn’t update your password. Try again.',
   },
 
   statusBadge: {

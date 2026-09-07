@@ -315,6 +315,100 @@ export function getUserByEmail(email) {
   return null
 }
 
+/**
+ * Called by AuthContext.updateName after the (awaited) auth-metadata write
+ * succeeds — this one is optimistic-with-rollback like every other write
+ * here, since a co-member seeing a one-sync-delayed name isn't worth
+ * blocking the success toast on. Patches every group's member list too, so
+ * the current user's own name updates immediately everywhere it's rendered
+ * from `groupsCache` (GroupDetail, GroupSettings), not just on next sync.
+ */
+export function updateCurrentUserName(name) {
+  const trimmed = String(name ?? '').trim()
+  if (!trimmed || !currentUserId) return
+
+  const previousName = currentUserName
+  const previousGroups = groupsCache
+
+  currentUserName = trimmed
+  groupsCache = groupsCache.map((group) => ({
+    ...group,
+    members: group.members.map((m) =>
+      m.email === currentUserEmail ? { ...m, name: trimmed } : m,
+    ),
+  }))
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ name: trimmed })
+        .eq('id', currentUserId)
+      if (error) throw error
+    } catch (error) {
+      console.error(
+        '[storage] updateCurrentUserName failed, rolling back',
+        error,
+      )
+      currentUserName = previousName
+      groupsCache = previousGroups
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
+/**
+ * Called by AuthContext.updatePhoto/removePhoto after the (awaited) auth-
+ * metadata write succeeds. `path` is the avatars-bucket object path, or
+ * `null` to clear it. Group member lists don't surface avatars in v1 (see
+ * specs/profile.md non-goals), so unlike updateCurrentUserName there's no
+ * groupsCache patch needed here — just the canonical public.users column,
+ * optimistic-with-rollback like every other write in this file.
+ */
+export function updateCurrentUserAvatar(path) {
+  if (!currentUserId) return
+
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ avatar_path: path })
+        .eq('id', currentUserId)
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] updateCurrentUserAvatar failed', error)
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
+/**
+ * Called by AuthContext.updateMobile after the (awaited) auth-metadata
+ * write succeeds. `mobile` is a plain string or `null` to clear it — same
+ * "no groupsCache patch" reasoning as updateCurrentUserAvatar, since no
+ * page surfaces another member's mobile number.
+ */
+export function updateCurrentUserMobile(mobile) {
+  if (!currentUserId) return
+
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ mobile })
+        .eq('id', currentUserId)
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] updateCurrentUserMobile failed', error)
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
 /* ------------------------------------------------------------------ groups */
 
 export function getGroup(groupId) {

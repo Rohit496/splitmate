@@ -1,9 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { LogOut, User } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
-import { Button } from './ui.jsx'
+import { Avatar, Button } from './ui.jsx'
 
 /** Wordmark: the mascot from public/logo.svg, plus a two-tone name. */
 export function Wordmark({ to = '/' }) {
@@ -60,10 +60,16 @@ export default function AppShell({ children }) {
           </div>
           {user ? (
             <div className="flex items-center gap-4">
-              <span className="inline-flex items-center gap-2 text-sm text-ink-soft">
-                <User size={16} />
+              <Link
+                to="/profile"
+                aria-current={
+                  location.pathname === '/profile' ? 'page' : undefined
+                }
+                className="inline-flex items-center gap-2 text-sm text-ink-soft transition-colors hover:text-ink"
+              >
+                <Avatar name={user.name} src={user.avatarUrl} />
                 {user.name}
-              </span>
+              </Link>
               <Button
                 type="button"
                 variant="secondary"

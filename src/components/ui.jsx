@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { content } from '../constant.js'
 import { formatMoney } from '../utils/money.js'
@@ -86,7 +87,10 @@ export function Field({ label, hint, error, id, children }) {
 export function FormError({ children }) {
   if (!children) return null
   return (
-    <p role="alert" className="rounded-control bg-neg-bg px-3.5 py-2.5 text-sm text-neg-fg">
+    <p
+      role="alert"
+      className="rounded-control bg-neg-bg px-3.5 py-2.5 text-sm text-neg-fg"
+    >
       {children}
     </p>
   )
@@ -130,7 +134,11 @@ export const MONEY_TONES = {
 
 /** A bare amount. Always tabular so digits line up down a column. */
 export function Money({ cents, tone = 'ink', className = '' }) {
-  return <span className={`num font-bold ${MONEY_TONES[tone]} ${className}`}>{formatMoney(cents)}</span>
+  return (
+    <span className={`num font-bold ${MONEY_TONES[tone]} ${className}`}>
+      {formatMoney(cents)}
+    </span>
+  )
 }
 
 /** Balance state on a group card: coloured background, matching text. */
@@ -162,8 +170,13 @@ export function BalancePill({ cents }) {
 
 /* ---------------------------------------------------------------- avatars */
 
-/** Initials only — one neutral treatment for everyone, no per-user colour. */
-export function Avatar({ name }) {
+/** Initials by default, or a photo when `src` is given (e.g. the signed-in
+    user's own uploaded avatar). Everyone else across the app still shows
+    initials only — passing no `src` (every pre-existing call site) is
+    unchanged. */
+export function Avatar({ name, src, size = 'sm', className = '' }) {
+  const [broken, setBroken] = useState(false)
+
   const initials = String(name ?? '?')
     .split(/\s+/)
     .filter(Boolean)
@@ -171,10 +184,23 @@ export function Avatar({ name }) {
     .map((part) => part[0].toUpperCase())
     .join('')
 
+  const dims = size === 'lg' ? 'size-16 text-xl' : 'size-7 text-[11px]'
+
+  if (src && !broken) {
+    return (
+      <img
+        src={src}
+        alt=""
+        onError={() => setBroken(true)}
+        className={`${dims} shrink-0 rounded-full object-cover ${className}`}
+      />
+    )
+  }
+
   return (
     <span
       aria-hidden="true"
-      className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-stone-100 text-[11px] font-semibold text-stone-600"
+      className={`inline-flex ${dims} shrink-0 items-center justify-center rounded-full bg-stone-100 font-semibold text-stone-600 ${className}`}
     >
       {initials || '?'}
     </span>
@@ -187,8 +213,12 @@ export function EmptyState({ title, body, children }) {
   return (
     <div className="rounded-card border border-line bg-surface px-5 py-12 text-center">
       <p className="text-base font-medium text-ink">{title}</p>
-      <p className="mx-auto mt-1.5 max-w-[44ch] text-sm text-ink-muted">{body}</p>
-      {children ? <div className="mt-5 flex justify-center">{children}</div> : null}
+      <p className="mx-auto mt-1.5 max-w-[44ch] text-sm text-ink-muted">
+        {body}
+      </p>
+      {children ? (
+        <div className="mt-5 flex justify-center">{children}</div>
+      ) : null}
     </div>
   )
 }

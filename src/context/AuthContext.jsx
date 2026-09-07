@@ -26,14 +26,28 @@ const copy = content.auth
 
 const AuthContext = createContext(null)
 
-/** Narrows a Supabase auth user down to the {id, name, email} shape the app expects. */
+const MAX_PHOTO_BYTES = 2 * 1024 * 1024
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+/** Narrows a Supabase auth user down to the {id, name, email, joinedAt,
+    avatarUrl} shape the app expects. avatarPath (the raw storage object
+    path, vs. avatarUrl's derived public URL) isn't part of the documented
+    shape — it's read internally by updatePhoto/removePhoto below to
+    best-effort delete the previous object. */
 function toPublicUser(authUser) {
   if (!authUser) return null
   const email = storage.normalizeEmail(authUser.email)
+  const avatarPath = authUser.user_metadata?.avatar_path || null
   return {
     id: authUser.id,
     name: authUser.user_metadata?.name || storage.nameFromEmail(email),
     email,
+    mobile: authUser.user_metadata?.mobile || '',
+    joinedAt: authUser.created_at,
+    avatarPath,
+    avatarUrl: avatarPath
+      ? supabase.storage.from('avatars').getPublicUrl(avatarPath).data.publicUrl
+      : null,
   }
 }
 
@@ -153,6 +167,198 @@ export function AuthProvider({ children }) {
     return { ok: true }
   }, [])
 
+  /**
+   * The name lives in two places and both must be written: auth user
+   * metadata (what this context and the navbar read) and public.users.name
+   * (what every OTHER group member sees in their own member lists) — see
+   * specs/profile.md → Edit name. The metadata write is awaited so the
+   * caller can react to success/failure honestly; the table write is
+   * optimistic-with-rollback, same as every other storage.js mutation.
+   */
+  const updateName = useCallback(async (name) => {
+    const trimmed = String(name ?? '').trim()
+    if (!trimmed) return { ok: false, error: copy.nameRequiredError }
+
+    const { error } = await supabase.auth.updateUser({
+      data: { name: trimmed },
+    })
+    if (error) return { ok: false, error: content.profile.nameSaveFailedError }
+
+    storage.updateCurrentUserName(trimmed)
+    return { ok: true }
+  }, [])
+
+  /**
+   * Reverses the spec's original "email is permanent" design at the user's
+   * explicit request. Unlike name/photo, this can't be optimistic — Supabase
+   * requires the new address to be confirmed before auth.users.email
+   * actually changes (email_change_confirm_status), so a successful call
+   * here only means "confirmation sent," not "email changed." user.email
+   * stays the OLD value until that confirmation completes and a fresh
+   * session is read.
+   *
+   * The real risk this used to guard against — expenses/expense_splits/
+   * settlements/group_members are all keyed by email as plain text, not
+   * user id — is now handled server-side: a trigger on auth.users
+   * (cascade_email_change, see the accompanying migration) renames the
+   * email across every one of those tables the moment Supabase actually
+   * commits the change, so no historical record gets orphaned.
+   */
+  const updateEmail = useCallback(
+    async (email) => {
+      const normalizedEmail = storage.normalizeEmail(email)
+      if (!normalizedEmail.includes('@'))
+        return { ok: false, error: copy.invalidEmailError }
+      if (normalizedEmail === user?.email)
+        return { ok: false, error: content.profile.emailSameError }
+
+      const { error } = await supabase.auth.updateUser({
+        email: normalizedEmail,
+      })
+      if (error) {
+        const alreadyRegistered = /registered|exists/i.test(error.message)
+        return {
+          ok: false,
+          error: alreadyRegistered
+            ? copy.emailTakenError
+            : content.profile.emailSaveFailedError,
+        }
+      }
+      return { ok: true }
+    },
+    [user],
+  )
+
+  /** Mobile number is optional, plain text, no format validation — same
+      dual-write (auth metadata + public.users.mobile) and optimistic
+      storage.js pattern as updateName, just without the groupsCache patch
+      (no page surfaces another member's mobile number, so there's nothing
+      else to keep in sync). */
+  const updateMobile = useCallback(async (mobile) => {
+    const trimmed = String(mobile ?? '').trim()
+
+    const { error } = await supabase.auth.updateUser({
+      data: { mobile: trimmed },
+    })
+    if (error)
+      return { ok: false, error: content.profile.mobileSaveFailedError }
+
+    storage.updateCurrentUserMobile(trimmed || null)
+    return { ok: true }
+  }, [])
+
+  /**
+   * Verifies the current password by re-authenticating before allowing the
+   * change — updateUser({ password }) alone doesn't require the old
+   * password, so skipping this would let anyone with an unlocked, already-
+   * signed-in browser change it without knowing it. Re-auth as the same
+   * user just refreshes the session; it doesn't navigate or sign in anyone
+   * else.
+   */
+  const changePassword = useCallback(
+    async ({ currentPassword, newPassword }) => {
+      if (!newPassword || newPassword.length < 6)
+        return { ok: false, error: copy.passwordTooShortError }
+
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user?.email,
+        password: currentPassword,
+      })
+      if (reauthError)
+        return {
+          ok: false,
+          error: content.profile.currentPasswordWrongError,
+        }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+      if (error)
+        return {
+          ok: false,
+          error: error.message || content.profile.passwordSaveFailedError,
+        }
+
+      return { ok: true }
+    },
+    [user],
+  )
+
+  /**
+   * Validates type/size, uploads to the per-user folder in the `avatars`
+   * bucket, mirrors the path into auth metadata (awaited — this is what
+   * drives user.avatarUrl reactively) and public.users.avatar_path (via
+   * storage.js), then best-effort deletes the previous object so the bucket
+   * doesn't accumulate orphans. A failed delete is logged, not surfaced —
+   * the new photo is already live by that point.
+   */
+  const updatePhoto = useCallback(
+    async (file) => {
+      if (!ALLOWED_PHOTO_TYPES.includes(file.type))
+        return { ok: false, error: content.profile.photoTypeError }
+      if (file.size > MAX_PHOTO_BYTES)
+        return { ok: false, error: content.profile.photoTooLargeError }
+
+      const ext = file.type.split('/')[1]
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`
+      const previousPath = user.avatarPath
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { contentType: file.type })
+      if (uploadError)
+        return { ok: false, error: content.profile.photoUploadFailedError }
+
+      const { error } = await supabase.auth.updateUser({
+        data: { avatar_path: path },
+      })
+      if (error)
+        return { ok: false, error: content.profile.photoUploadFailedError }
+
+      storage.updateCurrentUserAvatar(path)
+
+      if (previousPath) {
+        supabase.storage
+          .from('avatars')
+          .remove([previousPath])
+          .catch((err) =>
+            console.error(
+              '[AuthContext] failed to delete previous avatar',
+              err,
+            ),
+          )
+      }
+
+      return { ok: true }
+    },
+    [user],
+  )
+
+  /** Trivially reversible (re-upload) — no confirm step, same reasoning the
+      app applies to every other non-destructive action. */
+  const removePhoto = useCallback(async () => {
+    const previousPath = user?.avatarPath
+
+    const { error } = await supabase.auth.updateUser({
+      data: { avatar_path: null },
+    })
+    if (error)
+      return { ok: false, error: content.profile.photoUploadFailedError }
+
+    storage.updateCurrentUserAvatar(null)
+
+    if (previousPath) {
+      supabase.storage
+        .from('avatars')
+        .remove([previousPath])
+        .catch((err) =>
+          console.error('[AuthContext] failed to delete previous avatar', err),
+        )
+    }
+
+    return { ok: true }
+  }, [user])
+
   const value = useMemo(
     () => ({
       user,
@@ -162,8 +368,27 @@ export function AuthProvider({ children }) {
       logout,
       requestPasswordReset,
       updatePassword,
+      updateName,
+      updateEmail,
+      updateMobile,
+      changePassword,
+      updatePhoto,
+      removePhoto,
     }),
-    [user, register, login, logout, requestPasswordReset, updatePassword],
+    [
+      user,
+      register,
+      login,
+      logout,
+      requestPasswordReset,
+      updatePassword,
+      updateName,
+      updateEmail,
+      updateMobile,
+      changePassword,
+      updatePhoto,
+      removePhoto,
+    ],
   )
 
   // Hold off rendering until the persisted session (if any) has been read, so
