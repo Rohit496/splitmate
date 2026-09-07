@@ -2,13 +2,18 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import * as storage from '../data/storage.js'
-import { useStoreVersion } from '../hooks/useStore.js'
+import { useStoreVersion, useStoreReady } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import AppShell from '../components/AppShell.jsx'
 import BudgetBar from '../components/BudgetBar.jsx'
-import { BalancePill, ButtonLink, EmptyState } from '../components/ui.jsx'
+import {
+  BalancePill,
+  ButtonLink,
+  EmptyState,
+  LoadingState,
+} from '../components/ui.jsx'
 import { formatMoney, totalSpentCents } from '../utils/money.js'
 import { balanceFor, totalsFor } from '../utils/balances.js'
 
@@ -76,6 +81,7 @@ export default function Dashboard() {
   useDocumentTitle(content.pageTitles.dashboard)
   const { user } = useAuth()
   const version = useStoreVersion()
+  const ready = useStoreReady()
 
   const groups = useMemo(() => {
     return storage.listGroupsForEmail(user.email).map((group) => {
@@ -111,50 +117,62 @@ export default function Dashboard() {
       <h1 className="text-xl font-bold text-ink">{copy.heading}</h1>
       <p className="mt-1 text-sm text-ink-soft">{copy.intro}</p>
 
-      <div className="mt-8 grid gap-2 sm:grid-cols-3">
-        <Figure
-          label={copy.owedToYou}
-          cents={totals.owed}
-          tone={totals.owed ? 'text-pos-fg' : 'text-flat-fg'}
-        />
-        <Figure
-          label={copy.youOwe}
-          cents={totals.owe}
-          tone={totals.owe ? 'text-neg-fg' : 'text-flat-fg'}
-        />
-        <Figure label={copy.netBalance} cents={totals.net} tone={netTone} />
-      </div>
-
-      <div className="mt-8">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-ink">
-            {copy.groupsHeading(groups.length)}
-          </h2>
-          {groups.length > 0 ? (
-            <ButtonLink to="/group/new" variant="secondary" className="gap-2">
-              <Plus size={16} />
-              {copy.newGroup}
-            </ButtonLink>
-          ) : null}
+      {!ready ? (
+        <div className="mt-8">
+          <LoadingState />
         </div>
+      ) : (
+        <>
+          <div className="mt-8 grid gap-2 sm:grid-cols-3">
+            <Figure
+              label={copy.owedToYou}
+              cents={totals.owed}
+              tone={totals.owed ? 'text-pos-fg' : 'text-flat-fg'}
+            />
+            <Figure
+              label={copy.youOwe}
+              cents={totals.owe}
+              tone={totals.owe ? 'text-neg-fg' : 'text-flat-fg'}
+            />
+            <Figure label={copy.netBalance} cents={totals.net} tone={netTone} />
+          </div>
 
-        <div className="mt-4">
-          {groups.length === 0 ? (
-            <EmptyState title={copy.emptyTitle} body={copy.emptyBody}>
-              <ButtonLink to="/group/new" className="gap-2">
-                <Plus size={16} />
-                {copy.createGroup}
-              </ButtonLink>
-            </EmptyState>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {groups.map((group) => (
-                <GroupRow key={group.id} group={group} />
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+          <div className="mt-8">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold text-ink">
+                {copy.groupsHeading(groups.length)}
+              </h2>
+              {groups.length > 0 ? (
+                <ButtonLink
+                  to="/group/new"
+                  variant="secondary"
+                  className="gap-2"
+                >
+                  <Plus size={16} />
+                  {copy.newGroup}
+                </ButtonLink>
+              ) : null}
+            </div>
+
+            <div className="mt-4">
+              {groups.length === 0 ? (
+                <EmptyState title={copy.emptyTitle} body={copy.emptyBody}>
+                  <ButtonLink to="/group/new" className="gap-2">
+                    <Plus size={16} />
+                    {copy.createGroup}
+                  </ButtonLink>
+                </EmptyState>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {groups.map((group) => (
+                    <GroupRow key={group.id} group={group} />
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </AppShell>
   )
 }

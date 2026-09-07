@@ -4,7 +4,7 @@ import { toast } from 'react-toastify'
 import { Download, PlusCircle, Settings } from 'lucide-react'
 import * as storage from '../data/storage.js'
 import { downloadGroupHistory } from '../utils/groupExport.js'
-import { useStoreVersion } from '../hooks/useStore.js'
+import { useStoreVersion, useStoreReady } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
@@ -19,6 +19,7 @@ import {
   ButtonLink,
   CategoryTag,
   EmptyState,
+  LoadingState,
   StatusBadge,
 } from '../components/ui.jsx'
 import { groupBalances } from '../utils/balances.js'
@@ -98,6 +99,7 @@ export default function GroupDetail() {
   const { id } = useParams()
   const { user } = useAuth()
   const version = useStoreVersion()
+  const ready = useStoreReady()
   const [isAdding, setIsAdding] = useState(false)
   const [settlingPairs, setSettlingPairs] = useState(() => new Set())
 
@@ -140,6 +142,16 @@ export default function GroupDetail() {
     data ? content.pageTitles.groupDetail(data.group.name) : content.app.name,
   )
 
+  // Check readiness before trusting a `null` data result — storage.js's
+  // cache starts empty, so without this a group that just hasn't synced yet
+  // would flash "not found" instead of loading.
+  if (!ready) {
+    return (
+      <AppShell>
+        <LoadingState />
+      </AppShell>
+    )
+  }
   if (!data) return <NotFound />
 
   const { group, expenses, nameOf, settlements, total, isCreator } = data

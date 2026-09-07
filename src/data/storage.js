@@ -91,6 +91,11 @@ export function upsertUserProfile({ id, name, email }) {
   currentUserId = id
   currentUserEmail = normalizeEmail(email)
   currentUserName = name || nameFromEmail(currentUserEmail)
+  // A fresh session (login, or a different account entirely) hasn't synced
+  // yet even if a previous user's data is still sitting in the cache — see
+  // the shared-cache note in CLAUDE.md. Resetting this makes every signed-in
+  // page show its loading state again rather than someone else's stale data.
+  syncedOnce = false
   scheduleSync()
 }
 
@@ -100,6 +105,18 @@ let groupsCache = []
 let expensesCache = []
 let settlementsCache = []
 let syncPromise = null
+
+// Whether the current session has completed at least one sync (success or
+// failure) with Supabase. Pages use this to tell "genuinely no data" apart
+// from "hasn't loaded yet" — storage.js has always returned whatever's in
+// the cache synchronously, which defaults to empty, so without this a page
+// can flash an empty state (or GroupDetail/GroupSettings can flash "not
+// found") for a real group that just hasn't arrived from the network yet.
+let syncedOnce = false
+
+export function hasSyncedOnce() {
+  return syncedOnce
+}
 
 const GROUP_SELECT = `
   id, name, created_by, created_at, budget_cents,
@@ -256,6 +273,10 @@ async function performSync() {
     // surface a toast, so at least don't make things worse.
     console.error('[storage] sync with Supabase failed', error)
   }
+  // Set even on failure — a page stuck spinning forever on a genuine outage
+  // is worse than one that falls back to showing (possibly stale, possibly
+  // empty) cached data, same reasoning as the catch block above.
+  syncedOnce = true
   bump()
 }
 
