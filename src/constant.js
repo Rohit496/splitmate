@@ -212,11 +212,18 @@ export const content = {
     owedToYou: 'Owed to you',
     youOwe: 'You owe',
     netBalance: 'Net balance',
-    groupsHeading: (count) => (count > 0 ? `Groups (${count})` : 'Groups'),
+    activeTab: (count) => `Active (${count})`,
+    settledTab: (count) => `Settled (${count})`,
     newGroup: 'New group',
     emptyTitle: 'No groups yet',
     emptyBody:
       'A group is where a shared tab lives — a trip, a flat, a weekend away. Make one and add the people you split with.',
+    emptyActiveTitle: 'All settled up',
+    emptyActiveBody:
+      'Every group you’re in is fully settled — nothing left to pay back.',
+    emptySettledTitle: 'Nothing settled yet',
+    emptySettledBody:
+      'A group shows up here once every balance in it is at zero.',
     createGroup: 'Create group',
     personCount: (count) => `${count} ${count === 1 ? 'person' : 'people'}`,
     pendingSuffix: (count) => ` · ${count} pending`,

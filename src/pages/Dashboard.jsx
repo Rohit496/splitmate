@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import * as storage from '../data/storage.js'
@@ -15,9 +15,31 @@ import {
   LoadingState,
 } from '../components/ui.jsx'
 import { formatMoney, totalSpentCents } from '../utils/money.js'
-import { balanceFor, totalsFor } from '../utils/balances.js'
+import { groupBalances, totalsFor } from '../utils/balances.js'
 
 const copy = content.dashboard
+
+/** Active/Settled toggle above the groups list. Ember Orange marks the
+    selected tab (the app's one accent color, reserved for interactive/
+    active state) via a bottom border rather than a filled background —
+    no new component needed elsewhere yet, so this stays local to
+    Dashboard rather than moving into ui.jsx. */
+function TabButton({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`border-b-2 px-0.5 pb-2 text-sm font-semibold transition-colors ${
+        active
+          ? 'border-primary text-primary'
+          : 'border-transparent text-ink-soft hover:text-ink'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
 
 /** One of the three headline figures. The number is the content; the label is a caption. */
 function Figure({ label, cents, tone }) {
@@ -82,12 +104,18 @@ export default function Dashboard() {
   const { user } = useAuth()
   const version = useStoreVersion()
   const ready = useStoreReady()
+  const [tab, setTab] = useState('active')
 
   const groups = useMemo(() => {
     return storage.listGroupsForEmail(user.email).map((group) => {
       const expenses = storage.listExpenses(group.id)
       const settlements = storage.listSettlements(group.id)
       const emails = group.members.map((member) => member.email)
+      const { net, settlements: owed } = groupBalances(
+        emails,
+        expenses,
+        settlements,
+      )
       return {
         ...group,
         expenseCount: expenses.length,
@@ -95,10 +123,25 @@ export default function Dashboard() {
         pendingCount: group.members.filter(
           (member) => member.status === 'pending',
         ).length,
-        balance: balanceFor(user.email, emails, expenses, settlements),
+        balance: net.get(user.email) ?? 0,
+        // A group with no expenses yet has nothing to settle, so it counts
+        // as Active rather than Settled — only a group that's actually
+        // been used and come out fully even (every simplified settlement
+        // is empty) counts as Settled.
+        settled: expenses.length > 0 && owed.length === 0,
       }
     })
   }, [user.email, version])
+
+  const activeGroups = useMemo(
+    () => groups.filter((group) => !group.settled),
+    [groups],
+  )
+  const settledGroups = useMemo(
+    () => groups.filter((group) => group.settled),
+    [groups],
+  )
+  const visibleGroups = tab === 'active' ? activeGroups : settledGroups
 
   const totals = useMemo(
     () => totalsFor(groups.map((group) => group.balance)),
@@ -139,9 +182,22 @@ export default function Dashboard() {
 
           <div className="mt-8">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold text-ink">
-                {copy.groupsHeading(groups.length)}
-              </h2>
+              {groups.length > 0 ? (
+                <div className="flex gap-5">
+                  <TabButton
+                    active={tab === 'active'}
+                    onClick={() => setTab('active')}
+                  >
+                    {copy.activeTab(activeGroups.length)}
+                  </TabButton>
+                  <TabButton
+                    active={tab === 'settled'}
+                    onClick={() => setTab('settled')}
+                  >
+                    {copy.settledTab(settledGroups.length)}
+                  </TabButton>
+                </div>
+              ) : null}
               {groups.length > 0 ? (
                 <ButtonLink
                   to="/group/new"
@@ -162,9 +218,22 @@ export default function Dashboard() {
                     {copy.createGroup}
                   </ButtonLink>
                 </EmptyState>
+              ) : visibleGroups.length === 0 ? (
+                <EmptyState
+                  title={
+                    tab === 'active'
+                      ? copy.emptyActiveTitle
+                      : copy.emptySettledTitle
+                  }
+                  body={
+                    tab === 'active'
+                      ? copy.emptyActiveBody
+                      : copy.emptySettledBody
+                  }
+                />
               ) : (
                 <ul className="flex flex-col gap-2">
-                  {groups.map((group) => (
+                  {visibleGroups.map((group) => (
                     <GroupRow key={group.id} group={group} />
                   ))}
                 </ul>
