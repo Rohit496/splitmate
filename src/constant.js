@@ -435,11 +435,14 @@ export const content = {
     heading: 'Profile',
     intro: 'Your account details.',
 
-    // Your details card
-    detailsHeading: 'Your details',
-    emailLabel: 'Email',
-    emailReadonlyHint: 'Your email can’t be changed.',
+    // Personal details card — photo, email, name, mobile all live here as
+    // one section; a single Save button handles email/name/mobile together
+    // (photo has its own immediate Change/Remove actions, since a file
+    // picker doesn't defer to a later Save the way text fields do).
+    detailsHeading: 'Personal details',
     joinedLabel: 'Member since',
+    save: 'Save',
+    detailsSavedToast: 'Details updated',
 
     // Photo
     changePhoto: 'Change photo',
@@ -450,14 +453,26 @@ export const content = {
     photoTooLargeError: 'Image must be under 2 MB.',
     photoUploadFailedError: 'Couldn’t upload your photo. Try again.',
 
+    // Email
+    emailLabel: 'Email',
+    emailChangeHint:
+      'Changing your email sends a confirmation link to the new address before it takes effect.',
+    emailChangeRequestedToast: 'Check your inbox to confirm your new email.',
+    emailSameError: 'That’s already your email.',
+    emailTakenError: 'That email already has an account.',
+    emailSaveFailedError: 'Couldn’t update your email. Try again.',
+
     // Name
-    nameHeading: 'Name',
-    nameLabel: 'Name',
-    save: 'Save',
-    nameSavedToast: 'Name updated',
-    nameRequiredError: 'Enter your name.',
+    firstNameLabel: 'First name',
+    lastNameLabel: 'Last name',
+    firstNameRequiredError: 'Enter your first name.',
     nameTooLongError: 'Keep your name under 60 characters.',
     nameSaveFailedError: 'Couldn’t save your name. Try again.',
+
+    // Mobile
+    mobileLabel: 'Mobile number',
+    mobileHint: 'Optional.',
+    mobileSaveFailedError: 'Couldn’t save your mobile number. Try again.',
 
     // Password
     passwordHeading: 'Change password',

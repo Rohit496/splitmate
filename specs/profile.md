@@ -11,6 +11,17 @@ This is a spec only. Nothing here is built yet — there is no `/profile` route,
 no `content.profile` copy block, no `avatar` column, and no Supabase Storage
 bucket today.
 
+> **Built, with one deliberate deviation:** the page shipped per this spec,
+> except email is **editable**, not read-only — reversed at the user's
+> explicit request after being warned of the reasoning below. See
+> [Email (editable)](#email-read-only) for what that actually required
+> (Supabase's double-confirmation flow, plus a database trigger that cascades
+> the rename across every email-keyed table so history doesn't orphan). Photo,
+> email, name, and mobile number (a field added beyond this spec) all live in
+> one merged "Personal details" card with a single Save button for the text
+> fields, rather than the separate cards this doc originally described —
+> photo keeps its own immediate Change/Remove actions.
+
 ## Non-goals (v1)
 
 - **No editing the email address.** Email is display-only, always — see
@@ -289,11 +300,11 @@ message under the field, matching the rest of the app).
 backend places and both must be written, or the user's name goes inconsistent:
 
 1. **Supabase Auth user metadata** — `supabase.auth.updateUser({ data: { name }
-   })`. This is what `toPublicUser` reads (`user_metadata.name`), so it drives
+})`. This is what `toPublicUser` reads (`user_metadata.name`), so it drives
    the Profile display **and the navbar**, and it's what makes the update
    reactive (see next section).
 2. **`public.users.name`** — the `groups` query joins `group_members … users
-   ( name )`, so **this** column is what every _other_ member sees as your name
+( name )`, so **this** column is what every _other_ member sees as your name
    in their group lists, and what the current user sees for themselves in their
    own group member lists (`mapGroupRow` sets `member.name = m.users?.name`).
    Updating only auth metadata would leave your name stale everywhere a group
@@ -361,7 +372,7 @@ straight out of the existing auth plumbing:
 1. `updateName` calls `supabase.auth.updateUser({ data: { name } })`.
 2. supabase-js emits a `USER_UPDATED` event on the auth channel.
 3. `AuthContext`'s existing `supabase.auth.onAuthStateChange((_event, session)
-   => { setUser(toPublicUser(session.user)); … })` handler fires. `session.user`
+=> { setUser(toPublicUser(session.user)); … })` handler fires. `session.user`
    now carries the new `user_metadata.name`, so `toPublicUser` returns a user
    object with the new `name`, and `setUser` updates the context value.
 4. Every consumer of `useAuth().user` re-renders — including `AppShell`, whose
@@ -393,11 +404,11 @@ single-purpose session minted from an emailed link.
 
 **Fields** (each a `Field` + `TextInput type="password"`):
 
-| Field                | id                 | autoComplete       | Hint                     |
-| -------------------- | ------------------ | ------------------ | ------------------------ |
-| Current password     | `profile-current`  | `current-password` | —                        |
-| New password         | `profile-new`      | `new-password`     | `copy.passwordHint` ("At least 6 characters.") |
-| Confirm new password | `profile-confirm`  | `new-password`     | —                        |
+| Field                | id                | autoComplete       | Hint                                           |
+| -------------------- | ----------------- | ------------------ | ---------------------------------------------- |
+| Current password     | `profile-current` | `current-password` | —                                              |
+| New password         | `profile-new`     | `new-password`     | `copy.passwordHint` ("At least 6 characters.") |
+| Confirm new password | `profile-confirm` | `new-password`     | —                                              |
 
 All three are local component state, cleared to `''` on a successful change.
 A single `FormError` banner sits above the submit button for errors that aren't
@@ -438,7 +449,8 @@ const changePassword = useCallback(
       return { ok: false, error: content.profile.currentPasswordWrongError }
 
     const { error } = await supabase.auth.updateUser({ password: newPassword })
-    if (error) return { ok: false, error: content.profile.passwordSaveFailedError }
+    if (error)
+      return { ok: false, error: content.profile.passwordSaveFailedError }
 
     return { ok: true }
   },
@@ -457,12 +469,18 @@ async function handleChangePassword(event) {
   if (newPass === current) return setError(copy.samePasswordError)
 
   setSaving(true)
-  const result = await changePassword({ currentPassword: current, newPassword: newPass })
+  const result = await changePassword({
+    currentPassword: current,
+    newPassword: newPass,
+  })
   setSaving(false)
   if (!result.ok) return setError(result.error)
 
   toast.success(copy.passwordSavedToast)
-  setCurrent(''); setNewPass(''); setConfirm(''); setError('')
+  setCurrent('')
+  setNewPass('')
+  setConfirm('')
+  setError('')
 }
 ```
 
@@ -499,7 +517,7 @@ today. The photo shows on the Profile page (large) and in the navbar identity
   attribute is a hint, not enforcement). GIF/SVG/HEIC and anything else →
   `copy.photoTypeError` ("Choose a JPEG, PNG, or WebP image."). SVG is
   excluded deliberately (script-in-SVG XSS surface).
-- **Size:** at most **2 MB** (`file.size <= 2 * 1024 * 1024`). Over → 
+- **Size:** at most **2 MB** (`file.size <= 2 * 1024 * 1024`). Over →
   `copy.photoTooLargeError` ("Image must be under 2 MB."). No client-side
   downscaling/cropping in v1 — just accept a reasonable file or reject it.
 - One file at a time (no `multiple`).
@@ -537,11 +555,11 @@ On file selection:
   `supabase.storage.from('avatars').getPublicUrl(path)` — no need to store the
   full URL.
 - Mirror `avatar_path` into **Auth user metadata** too (`updateUser({ data: {
-  avatar_path } })`), for the same reason `name` is mirrored there: it's what
+avatar_path } })`), for the same reason `name` is mirrored there: it's what
   `toPublicUser` reads to build `user.avatarUrl`, which drives the navbar and
   makes the change reactive via `USER_UPDATED` (identical mechanism to
   [name updates](#how-the-navbar-updates-when-the-name-changes)). `public.users
-  .avatar_path` is the canonical/cross-user copy; the metadata copy is a
+.avatar_path` is the canonical/cross-user copy; the metadata copy is a
   denormalized cache for the current user's own chrome.
 
 So a photo change is three writes, orchestrated by the context method:
@@ -601,22 +619,22 @@ actions like recording a settlement). `toast.success(copy.photoRemovedToast)`.
 
 ## Error states (per field)
 
-| Field                | Trigger                                  | Message (copy key)                          | Presentation                          |
-| -------------------- | ---------------------------------------- | ------------------------------------------- | ------------------------------------- |
-| **Name**             | empty / whitespace only                  | `profile.nameRequiredError` (or reuse `auth.nameRequiredError`) | inline under the field (`Field.error`) |
-|                      | > 60 chars                               | `profile.nameTooLongError`                  | inline under the field                |
-|                      | auth-metadata write fails                | `profile.nameSaveFailedError`               | inline under the field                |
-| **Email**            | — (read-only, never editable)            | —                                           | —                                     |
-| **Current password** | empty                                    | `profile.currentPasswordRequiredError`      | banner above submit (`FormError`)     |
-|                      | doesn't match account                    | `profile.currentPasswordWrongError`         | banner above submit                   |
-| **New password**     | < 6 chars                                | `auth.passwordTooShortError` (reused)       | banner above submit                   |
-|                      | equals current password                  | `profile.samePasswordError`                 | banner above submit                   |
-|                      | update fails / rate-limited              | `profile.passwordSaveFailedError` or Supabase's own message | banner above submit    |
-| **Confirm password** | ≠ new password                           | `profile.mismatchError`                     | banner above submit                   |
-| **Photo**            | wrong type                               | `profile.photoTypeError`                    | inline under the photo controls       |
-|                      | > 2 MB                                    | `profile.photoTooLargeError`                | inline under the photo controls       |
-|                      | upload / persist fails                   | `profile.photoUploadFailedError`            | inline under the photo controls; old photo kept |
-|                      | image URL fails to load                  | — (silent; falls back to initials via `onError`) | initials shown                   |
+| Field                | Trigger                       | Message (copy key)                                              | Presentation                                    |
+| -------------------- | ----------------------------- | --------------------------------------------------------------- | ----------------------------------------------- |
+| **Name**             | empty / whitespace only       | `profile.nameRequiredError` (or reuse `auth.nameRequiredError`) | inline under the field (`Field.error`)          |
+|                      | > 60 chars                    | `profile.nameTooLongError`                                      | inline under the field                          |
+|                      | auth-metadata write fails     | `profile.nameSaveFailedError`                                   | inline under the field                          |
+| **Email**            | — (read-only, never editable) | —                                                               | —                                               |
+| **Current password** | empty                         | `profile.currentPasswordRequiredError`                          | banner above submit (`FormError`)               |
+|                      | doesn't match account         | `profile.currentPasswordWrongError`                             | banner above submit                             |
+| **New password**     | < 6 chars                     | `auth.passwordTooShortError` (reused)                           | banner above submit                             |
+|                      | equals current password       | `profile.samePasswordError`                                     | banner above submit                             |
+|                      | update fails / rate-limited   | `profile.passwordSaveFailedError` or Supabase's own message     | banner above submit                             |
+| **Confirm password** | ≠ new password                | `profile.mismatchError`                                         | banner above submit                             |
+| **Photo**            | wrong type                    | `profile.photoTypeError`                                        | inline under the photo controls                 |
+|                      | > 2 MB                        | `profile.photoTooLargeError`                                    | inline under the photo controls                 |
+|                      | upload / persist fails        | `profile.photoUploadFailedError`                                | inline under the photo controls; old photo kept |
+|                      | image URL fails to load       | — (silent; falls back to initials via `onError`)                | initials shown                                  |
 
 Convention, matching the rest of the app: **field-level** validation (name,
 photo) shows inline under its own control via `Field`'s `error` slot or a small
@@ -637,7 +655,7 @@ Schema lives only in the remote Supabase project (no local migrations — see
 CLAUDE.md); apply these via the Supabase MCP `apply_migration`:
 
 1. **`public.users.avatar_path`** — `alter table public.users add column
-   avatar_path text;` (nullable; the storage object path, not a URL).
+avatar_path text;` (nullable; the storage object path, not a URL).
 2. **UPDATE RLS on `public.users`** — the table has RLS enabled and (per
    CLAUDE.md) only a SELECT policy today, so name/avatar updates are
    default-denied. Add:
@@ -669,7 +687,8 @@ CLAUDE.md); apply these via the Supabase MCP `apply_migration`:
        email,
        joinedAt: authUser.created_at, // ISO timestamp; sliced to a date for display
        avatarUrl: avatarPath
-         ? supabase.storage.from('avatars').getPublicUrl(avatarPath).data.publicUrl
+         ? supabase.storage.from('avatars').getPublicUrl(avatarPath).data
+             .publicUrl
          : null,
      }
    }
@@ -778,13 +797,13 @@ the 6-char floor stays defined in exactly one place.
 ## Implementation pointers (non-binding)
 
 - **New**: `src/pages/Profile.jsx`; a `content.profile` block + `pageTitles
-  .profile` in `src/constant.js`; the `avatar_path` column, `users_update_self`
+.profile` in `src/constant.js`; the `avatar_path` column, `users_update_self`
   RLS policy, and `avatars` bucket + storage policies in Supabase.
 - **Changed**:
   - `src/App.jsx` — add the `/profile` route under `RequireAuth`.
   - `src/components/AppShell.jsx` — make the identity block a `<Link
-    to="/profile">` with `aria-current`, swap `<User>` for `<Avatar name
-    src>`.
+to="/profile">` with `aria-current`, swap `<User>` for `<Avatar name
+src>`.
   - `src/context/AuthContext.jsx` — extend `toPublicUser` (`joinedAt`,
     `avatarUrl`); add `updateName`, `changePassword`, `updatePhoto`,
     `removePhoto` to the context value.

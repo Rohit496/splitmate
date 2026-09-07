@@ -385,6 +385,30 @@ export function updateCurrentUserAvatar(path) {
   })()
 }
 
+/**
+ * Called by AuthContext.updateMobile after the (awaited) auth-metadata
+ * write succeeds. `mobile` is a plain string or `null` to clear it — same
+ * "no groupsCache patch" reasoning as updateCurrentUserAvatar, since no
+ * page surfaces another member's mobile number.
+ */
+export function updateCurrentUserMobile(mobile) {
+  if (!currentUserId) return
+
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ mobile })
+        .eq('id', currentUserId)
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] updateCurrentUserMobile failed', error)
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
 /* ------------------------------------------------------------------ groups */
 
 export function getGroup(groupId) {

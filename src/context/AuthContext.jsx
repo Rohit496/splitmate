@@ -42,6 +42,7 @@ function toPublicUser(authUser) {
     id: authUser.id,
     name: authUser.user_metadata?.name || storage.nameFromEmail(email),
     email,
+    mobile: authUser.user_metadata?.mobile || '',
     joinedAt: authUser.created_at,
     avatarPath,
     avatarUrl: avatarPath
@@ -188,6 +189,65 @@ export function AuthProvider({ children }) {
   }, [])
 
   /**
+   * Reverses the spec's original "email is permanent" design at the user's
+   * explicit request. Unlike name/photo, this can't be optimistic — Supabase
+   * requires the new address to be confirmed before auth.users.email
+   * actually changes (email_change_confirm_status), so a successful call
+   * here only means "confirmation sent," not "email changed." user.email
+   * stays the OLD value until that confirmation completes and a fresh
+   * session is read.
+   *
+   * The real risk this used to guard against — expenses/expense_splits/
+   * settlements/group_members are all keyed by email as plain text, not
+   * user id — is now handled server-side: a trigger on auth.users
+   * (cascade_email_change, see the accompanying migration) renames the
+   * email across every one of those tables the moment Supabase actually
+   * commits the change, so no historical record gets orphaned.
+   */
+  const updateEmail = useCallback(
+    async (email) => {
+      const normalizedEmail = storage.normalizeEmail(email)
+      if (!normalizedEmail.includes('@'))
+        return { ok: false, error: copy.invalidEmailError }
+      if (normalizedEmail === user?.email)
+        return { ok: false, error: content.profile.emailSameError }
+
+      const { error } = await supabase.auth.updateUser({
+        email: normalizedEmail,
+      })
+      if (error) {
+        const alreadyRegistered = /registered|exists/i.test(error.message)
+        return {
+          ok: false,
+          error: alreadyRegistered
+            ? copy.emailTakenError
+            : content.profile.emailSaveFailedError,
+        }
+      }
+      return { ok: true }
+    },
+    [user],
+  )
+
+  /** Mobile number is optional, plain text, no format validation — same
+      dual-write (auth metadata + public.users.mobile) and optimistic
+      storage.js pattern as updateName, just without the groupsCache patch
+      (no page surfaces another member's mobile number, so there's nothing
+      else to keep in sync). */
+  const updateMobile = useCallback(async (mobile) => {
+    const trimmed = String(mobile ?? '').trim()
+
+    const { error } = await supabase.auth.updateUser({
+      data: { mobile: trimmed },
+    })
+    if (error)
+      return { ok: false, error: content.profile.mobileSaveFailedError }
+
+    storage.updateCurrentUserMobile(trimmed || null)
+    return { ok: true }
+  }, [])
+
+  /**
    * Verifies the current password by re-authenticating before allowing the
    * change — updateUser({ password }) alone doesn't require the old
    * password, so skipping this would let anyone with an unlocked, already-
@@ -309,6 +369,8 @@ export function AuthProvider({ children }) {
       requestPasswordReset,
       updatePassword,
       updateName,
+      updateEmail,
+      updateMobile,
       changePassword,
       updatePhoto,
       removePhoto,
@@ -321,6 +383,8 @@ export function AuthProvider({ children }) {
       requestPasswordReset,
       updatePassword,
       updateName,
+      updateEmail,
+      updateMobile,
       changePassword,
       updatePhoto,
       removePhoto,
