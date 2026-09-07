@@ -12,6 +12,7 @@ import Register from './pages/Register.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Profile from './pages/Profile.jsx'
 import Reports from './pages/Reports.jsx'
 import CreateGroup from './pages/CreateGroup.jsx'
 import GroupDetail from './pages/GroupDetail.jsx'
@@ -54,6 +55,14 @@ export default function App() {
           element={
             <RequireAuth>
               <Reports />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <Profile />
             </RequireAuth>
           }
         />

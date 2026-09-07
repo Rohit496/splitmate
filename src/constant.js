@@ -37,6 +37,7 @@ export const content = {
     groupDetail: (groupName) => `${groupName} | Splitmate`,
     groupSettings: 'Group Settings | Splitmate',
     reports: 'Reports | Splitmate',
+    profile: 'Profile | Splitmate',
   },
 
   categories: {
@@ -428,6 +429,50 @@ export const content = {
     confirmEmailNotice: 'Check your inbox to confirm your email, then sign in.',
     resetLinkExpiredError:
       'This reset link is invalid or has expired. Request a new one.',
+  },
+
+  profile: {
+    heading: 'Profile',
+    intro: 'Your account details.',
+
+    // Your details card
+    detailsHeading: 'Your details',
+    emailLabel: 'Email',
+    emailReadonlyHint: 'Your email can’t be changed.',
+    joinedLabel: 'Member since',
+
+    // Photo
+    changePhoto: 'Change photo',
+    removePhoto: 'Remove photo',
+    photoUpdatedToast: 'Photo updated',
+    photoRemovedToast: 'Photo removed',
+    photoTypeError: 'Choose a JPEG, PNG, or WebP image.',
+    photoTooLargeError: 'Image must be under 2 MB.',
+    photoUploadFailedError: 'Couldn’t upload your photo. Try again.',
+
+    // Name
+    nameHeading: 'Name',
+    nameLabel: 'Name',
+    save: 'Save',
+    nameSavedToast: 'Name updated',
+    nameRequiredError: 'Enter your name.',
+    nameTooLongError: 'Keep your name under 60 characters.',
+    nameSaveFailedError: 'Couldn’t save your name. Try again.',
+
+    // Password
+    passwordHeading: 'Change password',
+    currentPasswordLabel: 'Current password',
+    newPasswordLabel: 'New password',
+    confirmPasswordLabel: 'Confirm new password',
+    passwordHint: 'At least 6 characters.',
+    passwordPlaceholder: '••••••••',
+    updatePassword: 'Update password',
+    passwordSavedToast: 'Password updated',
+    currentPasswordRequiredError: 'Enter your current password.',
+    currentPasswordWrongError: 'That doesn’t match your current password.',
+    mismatchError: 'Passwords don’t match.',
+    samePasswordError: 'Choose a password different from your current one.',
+    passwordSaveFailedError: 'Couldn’t update your password. Try again.',
   },
 
   statusBadge: {
