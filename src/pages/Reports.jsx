@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { Download } from 'lucide-react'
 import * as storage from '../data/storage.js'
-import { useStoreVersion } from '../hooks/useStore.js'
+import { useStoreVersion, useStoreReady } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
@@ -16,6 +16,7 @@ import {
   EmptyState,
   Field,
   FormError,
+  LoadingState,
   TextButton,
   TextInput,
   inputClass,
@@ -470,6 +471,7 @@ export default function Reports() {
   useDocumentTitle(content.pageTitles.reports)
   const { user } = useAuth()
   const version = useStoreVersion()
+  const ready = useStoreReady()
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
 
   const groups = useMemo(
@@ -496,7 +498,9 @@ export default function Reports() {
   }
 
   let body
-  if (groups.length === 0) {
+  if (!ready) {
+    body = <LoadingState />
+  } else if (groups.length === 0) {
     body = (
       <EmptyState title={copy.emptyNoGroupsTitle} body={copy.emptyNoGroupsBody}>
         <ButtonLink to="/group/new">{copy.createGroup}</ButtonLink>

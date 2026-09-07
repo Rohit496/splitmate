@@ -16,6 +16,7 @@ export const content = {
     metaDescription:
       'Splitmate keeps track of who paid for what, then works out the fewest transfers that settle the group.',
     footer: 'Everything you enter stays in this browser.',
+    loading: 'Loading…',
   },
 
   toast: {
@@ -55,8 +56,10 @@ export const content = {
   },
 
   nav: {
+    profile: 'Profile',
     signOut: 'Sign out',
     signedOutToast: 'Signed out',
+    accountMenuAria: 'Account menu',
   },
 
   landing: {

@@ -3,7 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { Save } from 'lucide-react'
 import * as storage from '../data/storage.js'
-import { useStoreVersion } from '../hooks/useStore.js'
+import { useStoreVersion, useStoreReady } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
@@ -17,6 +17,7 @@ import {
   EmptyState,
   Field,
   FormError,
+  LoadingState,
   StatusBadge,
   TextButton,
   TextInput,
@@ -109,6 +110,7 @@ export default function GroupSettings() {
   const { id } = useParams()
   const { user } = useAuth()
   const version = useStoreVersion()
+  const ready = useStoreReady()
 
   const [name, setName] = useState('')
   const [nameSeeded, setNameSeeded] = useState(false)
@@ -148,6 +150,15 @@ export default function GroupSettings() {
     }
   }, [data, budgetSeeded])
 
+  // Check readiness before trusting a `null` data result — see the same
+  // note in GroupDetail.jsx.
+  if (!ready) {
+    return (
+      <AppShell>
+        <LoadingState />
+      </AppShell>
+    )
+  }
   if (!data) return <NotFound />
   if (!data.isCreator) return <Navigate to={`/group/${id}`} replace />
 

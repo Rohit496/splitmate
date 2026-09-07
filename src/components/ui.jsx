@@ -222,3 +222,36 @@ export function EmptyState({ title, body, children }) {
     </div>
   )
 }
+
+/* --------------------------------------------------------------- loading */
+
+/**
+ * The one deliberate exception to "nothing in this app animates" (see
+ * DESIGN.md → Elevation & Depth) — a data-fetch wait needs some signal of
+ * progress, and a static state reads as broken rather than loading. Respects
+ * prefers-reduced-motion the same way the two existing animations do.
+ */
+export function Spinner({ size = 20, className = '' }) {
+  return (
+    <span
+      role="status"
+      aria-label={content.app.loading}
+      className={`inline-block shrink-0 animate-spin rounded-full border-2 border-line border-t-primary motion-reduce:animate-none ${className}`}
+      style={{ width: size, height: size }}
+    />
+  )
+}
+
+/** Same card shape as EmptyState, shown instead of it while storage.js's
+    cache hasn't synced with Supabase yet — see useStoreReady(). Prevents a
+    page from flashing "no data" (or GroupDetail/GroupSettings flashing
+    "not found") for something that just hasn't loaded, not something that
+    doesn't exist. */
+export function LoadingState({ label = content.app.loading }) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-card border border-line bg-surface px-5 py-16 text-center">
+      <Spinner size={28} />
+      <p className="text-sm text-ink-muted">{label}</p>
+    </div>
+  )
+}
