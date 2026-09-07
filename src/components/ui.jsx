@@ -184,7 +184,7 @@ export function Avatar({ name, src, size = 'sm', className = '' }) {
     .map((part) => part[0].toUpperCase())
     .join('')
 
-  const dims = size === 'lg' ? 'size-20 text-2xl' : 'size-7 text-[11px]'
+  const dims = size === 'lg' ? 'size-16 text-xl' : 'size-7 text-[11px]'
 
   if (src && !broken) {
     return (

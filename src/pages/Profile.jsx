@@ -194,51 +194,43 @@ export default function Profile() {
           <h2 className="text-lg font-semibold text-ink">
             {copy.detailsHeading}
           </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            {copy.joinedLabel} {formatDate(user.joinedAt.slice(0, 10))}
+          </p>
 
-          <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+          <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row">
             <Avatar name={user.name} src={user.avatarUrl} size="lg" />
 
-            <div className="flex w-full flex-col gap-3">
-              <div>
-                <p className="text-xs font-medium text-ink-muted">
-                  {copy.joinedLabel}
-                </p>
-                <p className="mt-0.5 text-sm text-ink">
-                  {formatDate(user.joinedAt.slice(0, 10))}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            {/* Real, focusable input — visually hidden, triggered via the
-                button below by ref so keyboard/screen-reader users can still
-                reach it directly. Never faked with a styled div. */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              aria-label={copy.changePhoto}
-              className="sr-only"
-              onChange={handlePhotoSelected}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={photoBusy}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {copy.changePhoto}
-            </Button>
-            {user.avatarUrl ? (
-              <TextButton
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Real, focusable input — visually hidden, triggered via the
+                  button below by ref so keyboard/screen-reader users can
+                  still reach it directly. Never faked with a styled div. */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                aria-label={copy.changePhoto}
+                className="sr-only"
+                onChange={handlePhotoSelected}
+              />
+              <Button
                 type="button"
+                variant="secondary"
                 disabled={photoBusy}
-                onClick={handleRemovePhoto}
+                onClick={() => fileInputRef.current?.click()}
               >
-                {copy.removePhoto}
-              </TextButton>
-            ) : null}
+                {copy.changePhoto}
+              </Button>
+              {user.avatarUrl ? (
+                <TextButton
+                  type="button"
+                  disabled={photoBusy}
+                  onClick={handleRemovePhoto}
+                >
+                  {copy.removePhoto}
+                </TextButton>
+              ) : null}
+            </div>
           </div>
 
           {photoError ? (
@@ -251,23 +243,6 @@ export default function Profile() {
             onSubmit={handleDetailsSave}
             className="mt-6 flex flex-col gap-4 border-t border-line pt-6"
           >
-            <Field
-              label={copy.emailLabel}
-              id="profile-email"
-              hint={copy.emailChangeHint}
-            >
-              <TextInput
-                id="profile-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value)
-                  setDetailsError('')
-                }}
-              />
-            </Field>
-
             <div className="flex flex-col gap-3 sm:flex-row">
               <div className="flex-1">
                 <Field label={copy.firstNameLabel} id="profile-first-name">
@@ -294,6 +269,23 @@ export default function Profile() {
                 </Field>
               </div>
             </div>
+
+            <Field
+              label={copy.emailLabel}
+              id="profile-email"
+              hint={copy.emailChangeHint}
+            >
+              <TextInput
+                id="profile-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value)
+                  setDetailsError('')
+                }}
+              />
+            </Field>
 
             <Field
               label={copy.mobileLabel}
