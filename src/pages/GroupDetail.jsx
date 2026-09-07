@@ -387,7 +387,7 @@ export default function GroupDetail() {
                     index > 0 ? 'border-t border-line' : ''
                   }`}
                 >
-                  <Avatar name={member.name} />
+                  <Avatar name={member.name} src={member.avatarUrl} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-ink">
                       {member.name}
