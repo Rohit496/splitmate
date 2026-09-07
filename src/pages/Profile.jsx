@@ -270,39 +270,44 @@ export default function Profile() {
               </div>
             </div>
 
-            <Field
-              label={copy.emailLabel}
-              id="profile-email"
-              hint={copy.emailChangeHint}
-            >
-              <TextInput
-                id="profile-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value)
-                  setDetailsError('')
-                }}
-              />
-            </Field>
-
-            <Field
-              label={copy.mobileLabel}
-              id="profile-mobile"
-              hint={copy.mobileHint}
-            >
-              <TextInput
-                id="profile-mobile"
-                type="tel"
-                autoComplete="tel"
-                value={mobile}
-                onChange={(event) => {
-                  setMobile(event.target.value)
-                  setDetailsError('')
-                }}
-              />
-            </Field>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex-1">
+                <Field
+                  label={copy.emailLabel}
+                  id="profile-email"
+                  hint={copy.emailChangeHint}
+                >
+                  <TextInput
+                    id="profile-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value)
+                      setDetailsError('')
+                    }}
+                  />
+                </Field>
+              </div>
+              <div className="flex-1">
+                <Field
+                  label={copy.mobileLabel}
+                  id="profile-mobile"
+                  hint={copy.mobileHint}
+                >
+                  <TextInput
+                    id="profile-mobile"
+                    type="tel"
+                    autoComplete="tel"
+                    value={mobile}
+                    onChange={(event) => {
+                      setMobile(event.target.value)
+                      setDetailsError('')
+                    }}
+                  />
+                </Field>
+              </div>
+            </div>
 
             <FormError>{detailsError}</FormError>
 
