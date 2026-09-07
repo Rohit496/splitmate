@@ -7,6 +7,7 @@ import { downloadGroupHistory } from '../utils/groupExport.js'
 import { useStoreVersion } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import AppShell from '../components/AppShell.jsx'
 import AddExpenseModal from '../components/AddExpenseModal.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
@@ -36,36 +37,45 @@ function NotFound() {
   )
 }
 
+/**
+ * One expense card. Hierarchy runs description → amount → meta, in that
+ * priority order — the description is what you'd scan for, the amount is
+ * what you'd stop for, and who-paid/how-split are details you'd read after.
+ */
 function ExpenseRow({ expense, payerName, onDelete }) {
   const [confirming, setConfirming] = useState(false)
   const shares = expense.participants.length
   const isCustom = expense.splitMode === 'manual'
 
   return (
-    <li className="group flex items-center gap-4 rounded-card border border-line bg-surface p-5">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-base text-ink">{expense.description}</p>
-          <CategoryTag category={expense.category} />
-        </div>
-        <p className="mt-0.5 text-xs text-ink-muted">
-          {copy.payerLine(payerName, formatDate(expense.date))}
-          {isCustom ? copy.customShare(shares) : copy.equalShare(shares)}
+    <li className="group rounded-card border border-line bg-surface p-5 transition-colors hover:border-ink-muted">
+      <div className="flex items-start justify-between gap-4">
+        <p className="min-w-0 flex-1 truncate text-base font-semibold text-ink">
+          {expense.description}
         </p>
+        <span className="num shrink-0 text-lg font-bold text-ink">
+          {formatMoney(expense.amountCents)}
+        </span>
       </div>
 
-      <span className="num shrink-0 text-lg font-bold text-ink">
-        {formatMoney(expense.amountCents)}
-      </span>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-muted">
+          <span className="truncate">
+            {copy.payerLine(payerName, formatDate(expense.date))}
+            {isCustom ? copy.customShare(shares) : copy.equalShare(shares)}
+          </span>
+          <CategoryTag category={expense.category} />
+        </div>
 
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
-        aria-label={copy.removeAria(expense.description)}
-        className="shrink-0 rounded-control px-1.5 py-1 text-sm text-ink-muted opacity-0 transition-all hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
-      >
-        {copy.remove}
-      </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          aria-label={copy.removeAria(expense.description)}
+          className="shrink-0 rounded-control px-1.5 py-1 text-xs font-medium text-ink-muted opacity-0 transition-all hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          {copy.remove}
+        </button>
+      </div>
 
       {confirming ? (
         <ConfirmModal
@@ -127,6 +137,10 @@ export default function GroupDetail() {
 
     return { group, expenses, nameOf, settlements: ranked, total, isCreator }
   }, [id, user.email, version])
+
+  useDocumentTitle(
+    data ? content.pageTitles.groupDetail(data.group.name) : content.app.name,
+  )
 
   if (!data) return <NotFound />
 
@@ -217,146 +231,162 @@ export default function GroupDetail() {
         </div>
       </div>
 
-      {/* Members */}
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-ink">
-          {copy.membersHeading}
-        </h2>
-        <ul className="mt-4 overflow-hidden rounded-card border border-line bg-surface">
-          {group.members.map((member, index) => (
-            <li
-              key={member.email}
-              className={`flex items-center gap-3 px-5 py-3 ${
-                index > 0 ? 'border-t border-line' : ''
-              }`}
-            >
-              <Avatar name={member.name} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-ink">
-                  {member.name}
-                  {member.email === user.email ? (
-                    <span className="ml-1.5 text-xs text-ink-muted">
-                      {copy.you}
-                    </span>
-                  ) : null}
-                </p>
-                <p className="truncate text-xs text-ink-muted">
-                  {member.email}
-                </p>
-              </div>
-              <StatusBadge status={member.status} />
-            </li>
-          ))}
-        </ul>
-        {pending > 0 ? (
-          <p className="mt-3 text-xs text-ink-muted">{copy.pendingNotice}</p>
-        ) : null}
-      </section>
+      {/*
+        Two-column below lg (1024px): expenses lead, wider, on the left;
+        balance + members trail as a narrower supporting rail on the right.
+        Below lg everything collapses to one column and simply stacks in
+        source order — expenses, then balance, then members — so the DOM
+        order below is the mobile reading order, not just an implementation
+        detail.
+      */}
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+        {/* Expenses — the main focus */}
+        <section>
+          <h2 className="text-lg font-semibold text-ink">
+            {copy.expensesHeading(expenses.length)}
+          </h2>
 
-      {/* Expenses */}
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-ink">
-          {copy.expensesHeading(expenses.length)}
-        </h2>
-
-        <div className="mt-4">
-          {expenses.length === 0 ? (
-            <EmptyState
-              title={copy.emptyExpensesTitle}
-              body={copy.emptyExpensesBody}
-            >
-              <Button
-                onClick={() => setIsAdding(true)}
-                variant="secondary"
-                className="gap-2"
+          <div className="mt-4">
+            {expenses.length === 0 ? (
+              <EmptyState
+                title={copy.emptyExpensesTitle}
+                body={copy.emptyExpensesBody}
               >
-                <PlusCircle size={16} />
-                {copy.addExpense}
-              </Button>
-            </EmptyState>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {expenses.map((expense) => (
-                <ExpenseRow
-                  key={expense.id}
-                  expense={{
-                    ...expense,
-                    amountCents: Math.round(expense.amount * 100),
-                  }}
-                  payerName={nameOf.get(expense.paidBy) ?? expense.paidBy}
-                  onDelete={handleDeleteExpense}
-                />
+                <Button
+                  onClick={() => setIsAdding(true)}
+                  variant="secondary"
+                  className="gap-2"
+                >
+                  <PlusCircle size={16} />
+                  {copy.addExpense}
+                </Button>
+              </EmptyState>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {expenses.map((expense) => (
+                  <ExpenseRow
+                    key={expense.id}
+                    expense={{
+                      ...expense,
+                      amountCents: Math.round(expense.amount * 100),
+                    }}
+                    payerName={nameOf.get(expense.paidBy) ?? expense.paidBy}
+                    onDelete={handleDeleteExpense}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        {/* Balance + members — supporting info, narrower */}
+        <div className="flex flex-col gap-8 lg:sticky lg:top-20">
+          {/* Settle up — the reason anyone opens this page. */}
+          <section>
+            <h2 className="text-lg font-semibold text-ink">
+              {copy.settleHeading}
+            </h2>
+
+            <div className="mt-4">
+              {settlements.length === 0 ? (
+                <div className="rounded-card border border-line bg-surface px-5 py-8 text-center text-sm text-ink-muted">
+                  {expenses.length === 0
+                    ? copy.noExpensesYetBalance
+                    : copy.allSquare}
+                </div>
+              ) : (
+                <>
+                  <ul className="flex flex-col gap-3">
+                    {settlements.map((settlement) => {
+                      const youPay = settlement.from === user.email
+                      const youReceive = settlement.to === user.email
+                      const fromName =
+                        nameOf.get(settlement.from) ?? settlement.from
+                      const toName = nameOf.get(settlement.to) ?? settlement.to
+
+                      const involvesYou = youPay || youReceive
+
+                      return (
+                        <li
+                          key={`${settlement.from}-${settlement.to}`}
+                          className="flex flex-col gap-2"
+                        >
+                          <BalanceBar
+                            cents={settlement.cents}
+                            tone={
+                              youPay ? 'debt' : youReceive ? 'credit' : 'other'
+                            }
+                            label={
+                              youPay
+                                ? copy.youOweLine(toName)
+                                : youReceive
+                                  ? copy.owesYouLine(fromName)
+                                  : copy.othersOweLine(fromName, toName)
+                            }
+                          />
+                          {involvesYou ? (
+                            <Button
+                              variant="secondary"
+                              onClick={() => handleSettleUp(settlement)}
+                              disabled={settlingPairs.has(
+                                `${settlement.from}-${settlement.to}`,
+                              )}
+                              className="self-end"
+                            >
+                              {copy.settleUpButton}
+                            </Button>
+                          ) : null}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <p className="mt-3 text-xs text-ink-muted">
+                    {copy.paymentsClear(settlements.length)}
+                  </p>
+                </>
+              )}
+            </div>
+          </section>
+
+          {/* Members */}
+          <section>
+            <h2 className="text-lg font-semibold text-ink">
+              {copy.membersHeading}
+            </h2>
+            <ul className="mt-4 overflow-hidden rounded-card border border-line bg-surface">
+              {group.members.map((member, index) => (
+                <li
+                  key={member.email}
+                  className={`flex items-center gap-3 px-4 py-2.5 ${
+                    index > 0 ? 'border-t border-line' : ''
+                  }`}
+                >
+                  <Avatar name={member.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-ink">
+                      {member.name}
+                      {member.email === user.email ? (
+                        <span className="ml-1.5 text-xs text-ink-muted">
+                          {copy.you}
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="truncate text-xs text-ink-muted">
+                      {member.email}
+                    </p>
+                  </div>
+                  <StatusBadge status={member.status} />
+                </li>
               ))}
             </ul>
-          )}
-        </div>
-      </section>
-
-      {/* Settle up — the reason anyone opens this page. */}
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-ink">{copy.settleHeading}</h2>
-
-        <div className="mt-4">
-          {settlements.length === 0 ? (
-            <div className="rounded-card border border-line bg-surface px-5 py-8 text-center text-sm text-ink-muted">
-              {expenses.length === 0
-                ? copy.noExpensesYetBalance
-                : copy.allSquare}
-            </div>
-          ) : (
-            <>
-              <ul className="flex flex-col gap-2">
-                {settlements.map((settlement) => {
-                  const youPay = settlement.from === user.email
-                  const youReceive = settlement.to === user.email
-                  const fromName =
-                    nameOf.get(settlement.from) ?? settlement.from
-                  const toName = nameOf.get(settlement.to) ?? settlement.to
-
-                  const involvesYou = youPay || youReceive
-
-                  return (
-                    <li
-                      key={`${settlement.from}-${settlement.to}`}
-                      className="flex items-center gap-2"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <BalanceBar
-                          cents={settlement.cents}
-                          tone={
-                            youPay ? 'debt' : youReceive ? 'credit' : 'other'
-                          }
-                          label={
-                            youPay
-                              ? copy.youOweLine(toName)
-                              : youReceive
-                                ? copy.owesYouLine(fromName)
-                                : copy.othersOweLine(fromName, toName)
-                          }
-                        />
-                      </div>
-                      {involvesYou ? (
-                        <Button
-                          variant="secondary"
-                          onClick={() => handleSettleUp(settlement)}
-                          disabled={settlingPairs.has(
-                            `${settlement.from}-${settlement.to}`,
-                          )}
-                        >
-                          {copy.settleUpButton}
-                        </Button>
-                      ) : null}
-                    </li>
-                  )
-                })}
-              </ul>
+            {pending > 0 ? (
               <p className="mt-3 text-xs text-ink-muted">
-                {copy.paymentsClear(settlements.length)}
+                {copy.pendingNotice}
               </p>
-            </>
-          )}
+            ) : null}
+          </section>
         </div>
-      </section>
+      </div>
 
       {isAdding ? (
         <AddExpenseModal

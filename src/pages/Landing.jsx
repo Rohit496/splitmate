@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import { Wordmark } from '../components/AppShell.jsx'
 import BalanceBar from '../components/BalanceBar.jsx'
 import { ButtonLink } from '../components/ui.jsx'
@@ -46,7 +47,9 @@ function getIcon(map, title) {
   const Icon = map[title]
   if (!Icon) {
     if (import.meta.env.DEV) {
-      console.warn(`Landing: no icon mapped for "${title}" — falling back to a neutral glyph.`)
+      console.warn(
+        `Landing: no icon mapped for "${title}" — falling back to a neutral glyph.`,
+      )
     }
     return Circle
   }
@@ -54,6 +57,7 @@ function getIcon(map, title) {
 }
 
 export default function Landing() {
+  useDocumentTitle(content.pageTitles.landing)
   const { isAuthenticated } = useAuth()
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
 
@@ -85,13 +89,19 @@ export default function Landing() {
             <h1 className="text-[clamp(2rem,4.5vw,3.75rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-ink">
               {copy.headline}
             </h1>
-            <p className="mt-5 max-w-[46ch] text-base text-ink-soft">{copy.subhead}</p>
+            <p className="mt-5 max-w-[46ch] text-base text-ink-soft">
+              {copy.subhead}
+            </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <ButtonLink to="/register" className="gap-2 px-5 py-3 text-base">
                 {copy.getStarted}
                 <ArrowRight size={18} aria-hidden="true" />
               </ButtonLink>
-              <ButtonLink to="/login" variant="secondary" className="gap-2 px-5 py-3 text-base">
+              <ButtonLink
+                to="/login"
+                variant="secondary"
+                className="gap-2 px-5 py-3 text-base"
+              >
                 <LogIn size={18} aria-hidden="true" />
                 {copy.signIn}
               </ButtonLink>
@@ -102,8 +112,12 @@ export default function Landing() {
           <div>
             <div className="overflow-hidden rounded-card border border-line bg-surface">
               <div className="flex items-baseline justify-between border-b border-line px-5 py-3.5">
-                <span className="text-sm font-semibold text-ink">{copy.demoGroupName}</span>
-                <span className="text-xs text-ink-muted">{copy.demoPeopleCount(3)}</span>
+                <span className="text-sm font-semibold text-ink">
+                  {copy.demoGroupName}
+                </span>
+                <span className="text-xs text-ink-muted">
+                  {copy.demoPeopleCount(3)}
+                </span>
               </div>
 
               <ul>
@@ -113,20 +127,34 @@ export default function Landing() {
                     className="flex items-center justify-between gap-4 border-b border-line px-5 py-3.5"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-base text-ink">{expense.description}</p>
-                      <p className="mt-0.5 text-xs text-ink-muted">{copy.demoPayerLine(expense.payer)}</p>
+                      <p className="truncate text-base text-ink">
+                        {expense.description}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        {copy.demoPayerLine(expense.payer)}
+                      </p>
                     </div>
-                    <span className="num shrink-0 text-lg font-bold text-ink">{expense.amount}</span>
+                    <span className="num shrink-0 text-lg font-bold text-ink">
+                      {expense.amount}
+                    </span>
                   </li>
                 ))}
               </ul>
 
               <div className="px-5 py-4">
-                <p className="mb-2.5 text-xs text-ink-muted">{copy.settlesAs}</p>
-                <BalanceBar label={copy.demoSettlementLabel} cents={copy.demoSettlementCents} tone="credit" />
+                <p className="mb-2.5 text-xs text-ink-muted">
+                  {copy.settlesAs}
+                </p>
+                <BalanceBar
+                  label={copy.demoSettlementLabel}
+                  cents={copy.demoSettlementCents}
+                  tone="credit"
+                />
               </div>
             </div>
-            <p className="mt-2.5 text-center text-xs text-ink-muted">{copy.demoCaption}</p>
+            <p className="mt-2.5 text-center text-xs text-ink-muted">
+              {copy.demoCaption}
+            </p>
           </div>
         </section>
 
@@ -134,7 +162,9 @@ export default function Landing() {
             rather than three interchangeable cards. */}
         <section className="border-t border-line bg-surface py-16 sm:py-20">
           <div className={WIDE}>
-            <h2 className="text-xl font-bold text-ink">{copy.howItWorksHeading}</h2>
+            <h2 className="text-xl font-bold text-ink">
+              {copy.howItWorksHeading}
+            </h2>
 
             <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-3">
               {copy.steps.flatMap((step, i) => {
@@ -148,8 +178,12 @@ export default function Landing() {
                       <Icon size={20} aria-hidden="true" />
                     </span>
                     <div className="sm:mt-4">
-                      <h3 className="text-lg font-semibold text-ink">{step.title}</h3>
-                      <p className="mt-1.5 max-w-[32ch] text-sm text-ink-soft">{step.body}</p>
+                      <h3 className="text-lg font-semibold text-ink">
+                        {step.title}
+                      </h3>
+                      <p className="mt-1.5 max-w-[32ch] text-sm text-ink-soft">
+                        {step.body}
+                      </p>
                     </div>
                   </div>
                 )
@@ -172,25 +206,36 @@ export default function Landing() {
             supporting ones below it. Not four identical tiles. */}
         <section className="py-16 sm:py-20">
           <div className={WIDE}>
-            <h2 className="text-xl font-bold text-ink">{copy.featuresHeading}</h2>
+            <h2 className="text-xl font-bold text-ink">
+              {copy.featuresHeading}
+            </h2>
 
             <div className="mt-8 rounded-card border border-line bg-surface p-6 sm:p-8">
               <span className="inline-flex size-11 items-center justify-center rounded-control bg-canvas text-ink">
                 <Scale size={22} aria-hidden="true" />
               </span>
-              <h3 className="mt-4 text-xl font-bold text-ink">{copy.signatureFeature.title}</h3>
-              <p className="mt-2 max-w-[64ch] text-base text-ink-soft">{copy.signatureFeature.body}</p>
+              <h3 className="mt-4 text-xl font-bold text-ink">
+                {copy.signatureFeature.title}
+              </h3>
+              <p className="mt-2 max-w-[64ch] text-base text-ink-soft">
+                {copy.signatureFeature.body}
+              </p>
             </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
               {copy.features.map((feature) => {
                 const Icon = getIcon(FEATURE_ICONS, feature.title)
                 return (
-                  <div key={feature.title} className="rounded-card border border-line bg-surface p-5">
+                  <div
+                    key={feature.title}
+                    className="rounded-card border border-line bg-surface p-5"
+                  >
                     <span className="inline-flex size-9 items-center justify-center rounded-control bg-canvas text-ink-soft">
                       <Icon size={18} aria-hidden="true" />
                     </span>
-                    <h3 className="mt-3 text-base font-semibold text-ink">{feature.title}</h3>
+                    <h3 className="mt-3 text-base font-semibold text-ink">
+                      {feature.title}
+                    </h3>
                     <p className="mt-1 text-sm text-ink-soft">{feature.body}</p>
                   </div>
                 )
@@ -202,16 +247,26 @@ export default function Landing() {
         {/* Proof — the real settlement math, plus one honest quote from the
             same demo trip shown in the hero (not a fabricated testimonial). */}
         <section className="border-y border-line bg-canvas py-16 sm:py-20">
-          <div className={`${WIDE} grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16`}>
+          <div
+            className={`${WIDE} grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16`}
+          >
             <div>
-              <h2 className="text-xl font-bold text-ink">{copy.proofHeading}</h2>
-              <p className="mt-4 max-w-[48ch] text-base text-ink-soft">{copy.proofStatLine}</p>
+              <h2 className="text-xl font-bold text-ink">
+                {copy.proofHeading}
+              </h2>
+              <p className="mt-4 max-w-[48ch] text-base text-ink-soft">
+                {copy.proofStatLine}
+              </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center rounded-full bg-flat-bg px-3 py-1 text-xs font-medium text-flat-fg line-through">
                   15 possible debts
                 </span>
-                <ArrowRight aria-hidden="true" size={16} className="shrink-0 text-ink-muted" />
+                <ArrowRight
+                  aria-hidden="true"
+                  size={16}
+                  className="shrink-0 text-ink-muted"
+                />
                 <span className="inline-flex items-center rounded-full bg-pos-bg px-3 py-1 text-xs font-semibold text-pos-fg">
                   5 payments, guaranteed
                 </span>
@@ -220,17 +275,27 @@ export default function Landing() {
 
             <div className="rounded-card border border-line bg-surface p-6">
               <Quote aria-hidden="true" size={22} className="text-ink-muted" />
-              <p className="mt-3 text-lg text-ink">&ldquo;{copy.proofQuote}&rdquo;</p>
-              <p className="mt-3 text-sm text-ink-soft">— {copy.proofQuoteAttribution}</p>
+              <p className="mt-3 text-lg text-ink">
+                &ldquo;{copy.proofQuote}&rdquo;
+              </p>
+              <p className="mt-3 text-sm text-ink-soft">
+                — {copy.proofQuoteAttribution}
+              </p>
             </div>
           </div>
         </section>
 
         {/* Final CTA — one dark strip, one action. */}
         <section className="bg-ink py-16 sm:py-20">
-          <div className={`${WIDE} flex flex-col items-center gap-5 text-center`}>
-            <h2 className="max-w-[26ch] text-xl font-bold text-canvas">{copy.finalCtaHeading}</h2>
-            <p className="max-w-[46ch] text-base text-ink-muted">{copy.finalCtaBody}</p>
+          <div
+            className={`${WIDE} flex flex-col items-center gap-5 text-center`}
+          >
+            <h2 className="max-w-[26ch] text-xl font-bold text-canvas">
+              {copy.finalCtaHeading}
+            </h2>
+            <p className="max-w-[46ch] text-base text-ink-muted">
+              {copy.finalCtaBody}
+            </p>
             <ButtonLink to="/register" className="gap-2 px-5 py-3 text-base">
               {copy.finalCtaButton}
               <ArrowRight size={18} aria-hidden="true" />
@@ -239,7 +304,9 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className={`${WIDE} py-8 text-xs text-ink-muted`}>{copy.footer}</footer>
+      <footer className={`${WIDE} py-8 text-xs text-ink-muted`}>
+        {copy.footer}
+      </footer>
     </div>
   )
 }

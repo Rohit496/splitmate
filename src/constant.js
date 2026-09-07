@@ -23,6 +23,22 @@ export const content = {
     durationMs: 3000,
   },
 
+  // Browser tab titles, one per route. Set via useDocumentTitle() at the top
+  // of each page component — see src/hooks/useDocumentTitle.js. groupDetail
+  // is a function because that title includes the group's own name.
+  pageTitles: {
+    landing: 'Splitmate — Split expenses, not friendships',
+    login: 'Sign In | Splitmate',
+    register: 'Create Account | Splitmate',
+    forgotPassword: 'Forgot Password | Splitmate',
+    resetPassword: 'Reset Password | Splitmate',
+    dashboard: 'Dashboard | Splitmate',
+    newGroup: 'New Group | Splitmate',
+    groupDetail: (groupName) => `${groupName} | Splitmate`,
+    groupSettings: 'Group Settings | Splitmate',
+    reports: 'Reports | Splitmate',
+  },
+
   categories: {
     label: 'Category',
     options: [
@@ -293,6 +309,60 @@ export const content = {
       `${name} will no longer be part of this group. This can’t be undone.`,
     removeConfirmLabel: 'Remove',
     removeSuccessToast: 'Member removed',
+  },
+
+  reports: {
+    navLabel: 'Reports',
+    heading: 'Reports',
+    intro: 'Your expense history across every group, in one place.',
+
+    dateRangeLabel: 'Date range',
+    groupLabel: 'Group',
+    categoryLabel: 'Category',
+    allGroups: 'All groups',
+    allCategories: 'All categories',
+    rangeAllTime: 'All time',
+    rangeThisMonth: 'This month',
+    rangeLast3Months: 'Last 3 months',
+    rangeLast12Months: 'Last 12 months',
+    rangeCustom: 'Custom',
+    customFrom: 'From',
+    customTo: 'To',
+    rangeInvalidError: 'Start date must be before end date.',
+    clearFilters: 'Clear filters',
+
+    totalSpent: 'Total spent',
+    yourShare: 'Your share',
+    expensesLabel: 'Expenses',
+
+    chartHeading: 'Your spending over time',
+    categoryHeading: 'By category',
+    tableHeading: (count) =>
+      count > 0 ? `All expenses (${count})` : 'All expenses',
+    columnDate: 'Date',
+    columnGroup: 'Group',
+    columnDescription: 'Description',
+    columnCategory: 'Category',
+    columnAmount: 'Amount',
+    columnYourShare: 'Your Share',
+    columnPaidBy: 'Paid By',
+    columnSplitBetween: 'Split Between',
+
+    exportCsv: 'Export CSV',
+    exportDisabledTitle: 'Nothing to export yet.',
+    exportedToast: 'CSV downloaded',
+
+    emptyNoGroupsTitle: 'No groups yet',
+    emptyNoGroupsBody:
+      'Reports fill in once you’re in a group with some expenses on it.',
+    createGroup: 'Create group',
+
+    emptyNoExpensesTitle: 'Nothing to report yet',
+    emptyNoExpensesBody:
+      'Add an expense in any of your groups and it’ll show up here.',
+
+    emptyFilteredTitle: 'No expenses match these filters',
+    emptyFilteredBody: 'Try widening the date range, or clearing a filter.',
   },
 
   addExpenseModal: {

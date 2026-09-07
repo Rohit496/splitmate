@@ -30,7 +30,9 @@ Scripts: `npm run dev`, `npm run build`, `npm run preview`.
 ```
 src/
   main.jsx              # entry: StrictMode > BrowserRouter > App
-  App.jsx               # routes + ToastContainer, sets document title/meta
+  App.jsx               # routes + ToastContainer, sets the <meta description>
+                         # tag (each page sets its own document title — see
+                         # Key conventions)
   constant.js            # ALL user-facing copy — see Conventions
   index.css             # Tailwind v4 @theme tokens + base layer
   toast-theme.css        # overrides react-toastify's palette to match app tokens
@@ -43,14 +45,28 @@ src/
   data/storage.js        # the ONLY module that reads/writes groups & expenses —
                           # Supabase-backed now, no localStorage left at all
   hooks/useStore.js      # useSyncExternalStore wrapper for storage changes
+  hooks/useDocumentTitle.js # sets document.title for as long as the calling
+                         # page is mounted — see Key conventions
   utils/money.js         # cents<->dollars, formatting, date helpers
   utils/balances.js      # net balances + debt-simplification algorithm
+  utils/groupExport.js   # CSV export of one group's expense history
+  utils/monthlyReport.js # aggregates a user's expenses across every group they're
+                         # in into the Reports page's filtered rows/totals/chart/
+                         # by-category shapes — derived only, nothing stored
+  utils/csvExport.js     # builds + downloads the Reports page's CSV (multi-group
+                         # superset of groupExport.js's per-group export; duplicates
+                         # rather than shares its CSV-escaping helpers — see Known issues)
 ```
 
 No `supabase/` directory in this repo — the schema (tables, triggers, RLS
 policies) lives only in the remote Supabase project, applied directly via the
 Supabase MCP tools (`apply_migration`). There are no local `.sql` migration
 files to check for schema history; if you need it, query the live project.
+
+`specs/` holds feature specs written before implementation (e.g.
+`specs/reports.md`) — not binding once built, but useful context for why a
+feature is shaped the way it is; check there before assuming an omission is
+accidental.
 
 ## Data models
 
@@ -187,6 +203,7 @@ works without a real session.
 | `/forgot-password`    | `ForgotPassword` | public                         |
 | `/reset-password`     | `ResetPassword`  | public                         |
 | `/dashboard`          | `Dashboard`      | `RequireAuth`                  |
+| `/reports`            | `Reports`        | `RequireAuth`                  |
 | `/group/new`          | `CreateGroup`    | `RequireAuth`                  |
 | `/group/:id`          | `GroupDetail`    | `RequireAuth`                  |
 | `/group/:id/settings` | `GroupSettings`  | `RequireAuth` (+ creator-only) |
@@ -208,6 +225,43 @@ single-purpose) session automatically. Visiting it directly with no valid
 token still renders the form; submitting shows
 `content.auth.resetLinkExpiredError` instead of crashing.
 
+`/reports` is a signed-in user's expense history across _every_ group they
+belong to — filterable by date range/group/category, a spending-over-time
+bar chart, a by-category breakdown, and a CSV export — reached via a plain
+text link in `AppShell`'s header next to the `Wordmark` (which stays the
+dashboard link). It complements Dashboard rather than replacing anything on
+it: Dashboard answers "who owes whom right now" (balances, netted against
+settlements); Reports answers "what did I spend, and when" and deliberately
+has **no balance/settle-up math and no settlements** — it's a spend record,
+not a ledger of debts. Nothing here is a new data model: `utils/monthlyReport.js`
+derives everything (`buildMonthlyReport`) from `storage.listGroupsForEmail`
+and `storage.listExpenses` plus `utils/balances.js`'s `expenseShares`, same
+"recomputed on every read" philosophy as `utils/balances.js` itself, keyed on
+`useStoreVersion()` for reactivity like every other page. See
+`specs/reports.md` for the full spec this was built from.
+
+The spending-over-time chart (`SpendingChart` in `Reports.jsx`, a hand-rolled
+inline SVG) is horizontally scrollable once its bars don't fit, shows each
+bucket's total in a fixed row above the bars (not hugging each bar's own
+peak, so a short bar's label never collides with a tall neighbor's), and has
+a custom on-brand hover/focus tooltip in addition to each bar's native
+`<title>`. `buildChartBuckets` in `monthlyReport.js` never returns an empty
+array — with no rows to bucket (a fresh account, or a filter combination
+that matches nothing) it falls back to `emptyTrailingBuckets()`, a trailing
+6-calendar-month range at $0, so the chart keeps its shape instead of
+vanishing; `Reports.jsx` renders that fallback chart above the "no expenses
+match these filters" empty state rather than hiding the chart section.
+Two CSS gotchas the chart's positioning code works around, worth knowing
+before touching it again: the wrapper's `overflow-x-auto` makes the browser
+compute `overflow-y` as `auto` too (the CSS overflow spec ties the two axes
+together whenever only one is `visible`), so anything positioned above `y=0`
+inside it is silently clipped — that's why the tooltip anchors just below
+the total-label row instead of at each bar's own peak; and the `<svg>` needs
+`preserveAspectRatio="xMinYMid meet"`, because without it the default
+center alignment shifts the whole coordinate system sideways whenever
+`min-w-full` stretches the SVG wider than its natural content (few-bucket
+case), which breaks any pixel-based overlay positioned on top of it.
+
 ## Key conventions
 
 **Centralized copy.** Every piece of user-facing text — labels, placeholders,
@@ -218,6 +272,21 @@ depend on a count or interpolated value are **functions**, not strings — e.g.
 `copy.personCount(count)`, `copy.removeAria(name)` — call them, don't template
 around them. When adding a feature with new UI text, add the copy to
 `constant.js` first, then reference it — do not inline text in a component.
+
+**Per-route document titles.** Every route sets its own browser tab title by
+calling `useDocumentTitle(title)` (`src/hooks/useDocumentTitle.js`) at the
+top of the page component, before any early return — required so it still
+runs on pages that can bail out early (`GroupDetail`, `GroupSettings`,
+`Landing`'s authenticated-redirect). Titles live in `content.pageTitles`;
+entries that need a dynamic value are functions, same convention as the rest
+of `constant.js` (`groupDetail(name)` interpolates the group's own name,
+falling back to `content.app.name` while the group is loading or not found).
+`App.jsx`'s mount effect no longer sets `document.title` itself — it used to,
+but React fires child effects before parent effects, so that effect always
+ran _after_ every page's own `useDocumentTitle` and clobbered it back to the
+bare app name on every navigation; it now only updates the `<meta
+description>` tag. There's no `/profile` route yet, so `content.pageTitles`
+has no entry for one.
 
 **Money in integer cents.** All arithmetic goes through `utils/money.js`
 (`toCents`, `splitEqually`, `formatMoney`). Never do float math on dollar
@@ -342,6 +411,11 @@ badge.
   expense count) wraps awkwardly instead of truncating, because the balance
   pill next to it claims a fixed width. `Dashboard.jsx`'s `GroupRow` — the
   title has `truncate`, the subtitle doesn't. Not fixed yet.
+- **`AppShell`'s navbar wraps on narrow viewports (~390px) for a long signed-in
+  name** — the identity block and "Sign out" button wrap onto a second line
+  and overlap the page content directly below the sticky header, since the
+  header has no `flex-wrap` handling and a fixed height. Reproduces on any
+  signed-in page (confirmed on Dashboard and Group Detail); not fixed yet.
 - **`CreateGroup`'s pending/active preview** can show "pending" for an
   invited email that's actually already registered, if you don't already
   share a group with them — RLS deliberately won't let the client check an
@@ -356,6 +430,11 @@ badge.
 - One unconfirmed real auth account exists from manual testing:
   `covbnffseyzomobebm@vtmpj.com` — stuck pending email confirmation because
   that confirmation email got rate-limited. Harmless, left as-is.
+- **`utils/csvExport.js` duplicates `utils/groupExport.js`'s CSV-escaping
+  logic** (`csvEscapeField`/`toCsv`) instead of sharing it — `specs/reports.md`
+  called out extracting both into a shared `utils/csv.js` at implementation
+  time, but that extraction wasn't done. Two copies to keep in sync if the
+  CSV format ever changes.
 - **Running parallel subagents (Agent tool, `isolation: "worktree"`) against
   this repo**: a worktree's checkout can lag a commit or two behind the
   branch it forked from (observed once — a just-committed doc update was

@@ -12,16 +12,17 @@ import Register from './pages/Register.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Reports from './pages/Reports.jsx'
 import CreateGroup from './pages/CreateGroup.jsx'
 import GroupDetail from './pages/GroupDetail.jsx'
 import GroupSettings from './pages/GroupSettings.jsx'
 
 export default function App() {
-  // index.html carries the same title/description as a static fallback for
-  // crawlers and social previews that never run this JS — keep both in sync
-  // with constant.js by hand if either one changes.
+  // index.html carries the same description as a static fallback for
+  // crawlers and social previews that never run this JS — keep it in sync
+  // with constant.js by hand if it changes. The title itself is set per-route
+  // by each page's useDocumentTitle() call, not here.
   useEffect(() => {
-    document.title = content.app.name
     document
       .querySelector('meta[name="description"]')
       ?.setAttribute('content', content.app.metaDescription)
@@ -45,6 +46,14 @@ export default function App() {
           element={
             <RequireAuth>
               <Dashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <RequireAuth>
+              <Reports />
             </RequireAuth>
           }
         />

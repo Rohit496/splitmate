@@ -5,6 +5,7 @@ import * as storage from '../data/storage.js'
 import { useStoreVersion } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import AppShell from '../components/AppShell.jsx'
 import { BalancePill, ButtonLink, EmptyState } from '../components/ui.jsx'
 import { formatMoney } from '../utils/money.js'
@@ -51,6 +52,7 @@ function GroupRow({ group }) {
 }
 
 export default function Dashboard() {
+  useDocumentTitle(content.pageTitles.dashboard)
   const { user } = useAuth()
   const version = useStoreVersion()
 

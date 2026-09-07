@@ -6,6 +6,7 @@ import * as storage from '../data/storage.js'
 import { useStoreVersion } from '../hooks/useStore.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import AppShell from '../components/AppShell.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import {
@@ -102,6 +103,7 @@ function MemberRow({ member, isYou, onRemove }) {
 }
 
 export default function GroupSettings() {
+  useDocumentTitle(content.pageTitles.groupSettings)
   const { id } = useParams()
   const { user } = useAuth()
   const version = useStoreVersion()
