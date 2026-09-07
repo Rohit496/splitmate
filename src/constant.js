@@ -218,6 +218,8 @@ export const content = {
     pendingSuffix: (count) => ` · ${count} pending`,
     expenseSuffix: (count) =>
       ` · ${count} ${count === 1 ? 'expense' : 'expenses'}`,
+    budgetPercent: (pct) => `${pct}% of budget`,
+    budgetOverBy: (amountFormatted) => `${amountFormatted} over budget`,
   },
 
   createGroup: {
@@ -251,6 +253,9 @@ export const content = {
     addExpense: 'Add expense',
     personCount: (count) => `${count} ${count === 1 ? 'person' : 'people'}`,
     spentInTotal: 'spent in total',
+    budgetOfTotal: (spentFormatted, budgetFormatted) =>
+      `${spentFormatted} of ${budgetFormatted} budget`,
+    budgetOverBy: (amountFormatted) => `${amountFormatted} over budget`,
     membersHeading: 'Members',
     you: 'you',
     pendingNotice:
@@ -299,6 +304,13 @@ export const content = {
     nameRequiredError: 'Give the group a name.',
     save: 'Save',
     renameSuccessToast: 'Group renamed',
+    budgetLabel: 'Trip budget',
+    budgetHint:
+      'Optional. Everyone in the group can see it; only you can change it.',
+    budgetClear: 'Clear budget',
+    budgetInvalidError: 'Enter a budget greater than zero, or leave it blank.',
+    budgetSaveSuccessToast: 'Budget updated',
+    budgetClearedToast: 'Budget cleared',
     membersHeading: 'Members',
     you: 'you',
     creatorTag: 'Creator',

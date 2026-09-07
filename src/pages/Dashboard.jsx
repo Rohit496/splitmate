@@ -7,8 +7,9 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { content } from '../constant.js'
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js'
 import AppShell from '../components/AppShell.jsx'
+import BudgetBar from '../components/BudgetBar.jsx'
 import { BalancePill, ButtonLink, EmptyState } from '../components/ui.jsx'
-import { formatMoney } from '../utils/money.js'
+import { formatMoney, totalSpentCents } from '../utils/money.js'
 import { balanceFor, totalsFor } from '../utils/balances.js'
 
 const copy = content.dashboard
@@ -43,6 +44,26 @@ function GroupRow({ group }) {
               : ''}
             {copy.expenseSuffix(group.expenseCount)}
           </p>
+          {group.budgetCents != null ? (
+            <div className="mt-2">
+              <BudgetBar
+                spentCents={group.spentCents}
+                budgetCents={group.budgetCents}
+                size="compact"
+                label={
+                  group.spentCents > group.budgetCents
+                    ? copy.budgetOverBy(
+                        formatMoney(group.spentCents - group.budgetCents),
+                      )
+                    : copy.budgetPercent(
+                        Math.round(
+                          (group.spentCents / group.budgetCents) * 100,
+                        ),
+                      )
+                }
+              />
+            </div>
+          ) : null}
         </div>
 
         <BalancePill cents={group.balance} />
@@ -64,6 +85,7 @@ export default function Dashboard() {
       return {
         ...group,
         expenseCount: expenses.length,
+        spentCents: totalSpentCents(expenses),
         pendingCount: group.members.filter(
           (member) => member.status === 'pending',
         ).length,

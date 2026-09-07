@@ -12,6 +12,7 @@ import AppShell from '../components/AppShell.jsx'
 import AddExpenseModal from '../components/AddExpenseModal.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import BalanceBar from '../components/BalanceBar.jsx'
+import BudgetBar from '../components/BudgetBar.jsx'
 import {
   Avatar,
   Button,
@@ -21,7 +22,7 @@ import {
   StatusBadge,
 } from '../components/ui.jsx'
 import { groupBalances } from '../utils/balances.js'
-import { formatDate, formatMoney } from '../utils/money.js'
+import { formatDate, formatMoney, totalSpentCents } from '../utils/money.js'
 
 const copy = content.groupDetail
 
@@ -126,10 +127,7 @@ export default function GroupDetail() {
           Number(b.involvesYou) - Number(a.involvesYou) || b.cents - a.cents,
       )
 
-    const total = expenses.reduce(
-      (sum, expense) => sum + Math.round(expense.amount * 100),
-      0,
-    )
+    const total = totalSpentCents(expenses)
 
     const isCreator = group.members.some(
       (member) => member.email === user.email && member.isCreator,
@@ -200,6 +198,22 @@ export default function GroupDetail() {
             <span className="num font-semibold">{formatMoney(total)}</span>{' '}
             {copy.spentInTotal}
           </p>
+          {group.budgetCents != null ? (
+            <div className="mt-3 max-w-xs">
+              <BudgetBar
+                spentCents={total}
+                budgetCents={group.budgetCents}
+                label={
+                  total > group.budgetCents
+                    ? copy.budgetOverBy(formatMoney(total - group.budgetCents))
+                    : copy.budgetOfTotal(
+                        formatMoney(total),
+                        formatMoney(group.budgetCents),
+                      )
+                }
+              />
+            </div>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
           {isCreator ? (

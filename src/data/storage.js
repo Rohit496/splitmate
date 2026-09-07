@@ -102,7 +102,7 @@ let settlementsCache = []
 let syncPromise = null
 
 const GROUP_SELECT = `
-  id, name, created_by, created_at,
+  id, name, created_by, created_at, budget_cents,
   group_members ( email, user_id, added_at, users ( name ) )
 `
 
@@ -138,6 +138,7 @@ function mapGroupRow(row) {
     name: row.name,
     createdBy: row.created_by,
     createdAt: row.created_at,
+    budgetCents: row.budget_cents,
     members,
   }
 }
@@ -424,6 +425,44 @@ export function renameGroup(groupId, name) {
       if (error) throw error
     } catch (error) {
       console.error('[storage] renameGroup failed, rolling back', error)
+      groupsCache = previous
+      bump()
+    } finally {
+      scheduleSync()
+    }
+  })()
+}
+
+/**
+ * Group creator only — enforced server-side by the same `groups_update_creator`
+ * RLS policy as renameGroup. `budgetCents` is either a positive integer
+ * (sets/updates the budget) or `null` (clears it); GroupSettings.jsx turns a
+ * typed dollar string into cents (or null) before calling this, but the
+ * guard below still protects against a bad value reaching Supabase.
+ */
+export function updateGroupBudget(groupId, budgetCents) {
+  const normalized = budgetCents == null ? null : Math.round(budgetCents)
+  if (normalized != null && (!Number.isFinite(normalized) || normalized <= 0)) {
+    throw new Error(
+      'Budget must be a positive number of cents, or null to clear.',
+    )
+  }
+
+  const previous = groupsCache
+
+  groupsCache = groupsCache.map((group) =>
+    group.id === groupId ? { ...group, budgetCents: normalized } : group,
+  )
+  bump()
+  ;(async () => {
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update({ budget_cents: normalized })
+        .eq('id', groupId)
+      if (error) throw error
+    } catch (error) {
+      console.error('[storage] updateGroupBudget failed, rolling back', error)
       groupsCache = previous
       bump()
     } finally {
