@@ -25,6 +25,21 @@ behind Row Level Security, not local-only data.
   group, and category, see a spending chart and by-category breakdown, and
   export the filtered results as CSV
 - Delete an expense (soft delete) without losing historical balance accuracy
+- Set an optional total trip budget per group (creator-only) and see a
+  progress bar on the Dashboard and Group Detail comparing total spend
+  against it
+- Add a new member to an existing group from Group Settings, not just when
+  first creating it
+- See co-members' uploaded profile photos in group member lists, not just
+  initials
+- Split the Dashboard's groups into "Active" (still owed) and "Settled"
+  (everyone even) tabs, each with a live count
+- Manage your own account from a Profile page — photo, first/last name,
+  email, mobile number, and a password change
+- A single Account menu (Profile, Reports, Sign out) in the navbar, with a
+  loading spinner instead of an empty flash while data syncs from Supabase
+- Toggle between light and dark themes from a button in the navbar; your
+  choice is remembered on your next visit
 - Toast confirmations for sign in, register, create group, add/delete expense,
   rename group, record a settlement, and sign out
 - Data lives in Supabase (Postgres + Auth) behind Row Level Security, not in
@@ -60,25 +75,15 @@ behind Row Level Security, not local-only data.
 
 ## Test accounts
 
-Four accounts already exist in the connected Supabase project — the login
-page lists them as one-click quick-fill buttons, or type them in by hand:
+The connected Supabase project currently has no seeded test accounts — every
+account, group, and expense that previously existed was removed in a full
+reset. `Login.jsx` no longer has quick-fill login buttons for this reason.
 
-- priya.sharma@example.com
-- rahul.verma@example.com
-- ananya.iyer@example.com
-- karan.mehta@example.com
-
-All four use the password `password123`. They were seeded directly via SQL
-(bypassing Supabase Auth's normal rejection of `@example.com` addresses on
-signup), so there's nothing to set up locally — just open the app and sign
-in with one of them.
-
-To try the registration flow itself, go to `/register` and create an account
-with a real-looking email instead (Supabase rejects `@example.com`/
-`@example.org` on signup, unlike the accounts above which were inserted
-directly). Create a group and invite other members by email; an invited
-member can join a group before they've registered, and their invite
-resolves to "active" automatically once they sign up.
+To try the app, go to `/register` and create an account with a real-looking
+email (Supabase rejects `@example.com`/`@example.org` on signup). Create a
+group and invite other members by email; an invited member can join a group
+before they've registered, and their invite resolves to "active"
+automatically once they sign up.
 
 There's no cross-tab/cross-device live sync yet, so use separate browsers or
 profiles to try out multi-user flows.
@@ -95,13 +100,18 @@ src/
   toast-theme.css         react-toastify palette overrides
 
   pages/                  one component per route
-  components/             shared UI: AppShell, AuthLayout, modals, ui.jsx primitives
-  context/AuthContext.jsx   Supabase Auth state + register/login/logout/password reset
+  components/             shared UI: AppShell, AccountMenu, ThemeToggle,
+                          AuthLayout, modals, BudgetBar, ui.jsx primitives
+  context/AuthContext.jsx   Supabase Auth state + register/login/logout/password
+                            reset/profile updates (name, email, mobile, photo, password)
+  context/ThemeContext.jsx  light/dark theme, persisted in localStorage
   data/supabaseClient.js    the one Supabase client (auth.* + from(...) tables)
   data/storage.js           the only module that reads/writes groups, expenses, and settlements
-  hooks/useStore.js         useSyncExternalStore wrapper for storage changes
+  hooks/useStore.js         useSyncExternalStore wrappers: re-render on any store
+                            change, plus a ready flag for first-sync loading state
   hooks/useDocumentTitle.js sets the browser tab title for the calling page
-  utils/money.js            cents<->dollars conversion, formatting, date helpers
+  utils/money.js            cents<->dollars conversion, formatting, date helpers,
+                            total-spend aggregation
   utils/balances.js         net balances + debt-simplification algorithm
   utils/groupExport.js      CSV export of one group's expense history
   utils/monthlyReport.js    aggregates a user's expenses across groups for the Reports page
@@ -119,6 +129,7 @@ src/
 | `/reset-password`     | Reset Password   | No                |
 | `/dashboard`          | Dashboard        | Yes               |
 | `/reports`            | Reports          | Yes               |
+| `/profile`            | Profile          | Yes               |
 | `/group/new`          | Create Group     | Yes               |
 | `/group/:id`          | Group Detail     | Yes               |
 | `/group/:id/settings` | Group Settings   | Yes, creator only |
@@ -141,10 +152,16 @@ Core tables:
 
 - `public.users` — one row per account, created automatically by a trigger
   on `auth.users` insert. No password column; Supabase Auth owns credentials.
+  Also holds an optional avatar photo (stored in a public `avatars` Storage
+  bucket) and mobile number, both editable from the Profile page; email
+  changes go through Supabase's real confirmation flow and only propagate
+  across the app's other email-keyed tables once confirmed.
 - `public.groups` / `public.group_members` — groups and their membership.
   Members are keyed by email, not just `user_id`, so a group can include
   someone who hasn't registered yet; two DB triggers resolve a pending
   member to an active account the moment a matching email registers.
+  Groups also carry an optional `budget_cents` total that only the creator
+  can set, shown as a progress bar against total spend.
 - `public.expenses` / `public.expense_splits` — expenses and their per-person
   split. Deletes are soft (`is_deleted`) — there's no DELETE policy on
   `expenses` at all, so nothing is ever hard-removed.
@@ -161,6 +178,10 @@ adding, editing, or deleting an expense can never leave a stale total behind.
 Row Level Security, not the client-side filtering in `storage.js`, is the
 real security boundary: every table is scoped to rows for groups the
 signed-in user belongs to, and the `anon` role has no grants on any of them.
+
+One exception: your light/dark theme preference is stored in `localStorage`
+(`splitmate_theme`), not Supabase — it's a per-browser UI setting, not app
+data, so it isn't synced across devices.
 
 ## Important notes
 
@@ -180,10 +201,18 @@ signed-in user belongs to, and the `anon` role has no grants on any of them.
   through.
 - **All money math is done in integer cents** (`utils/money.js`), never on
   raw dollar floats, to avoid rounding errors when splitting unevenly.
+- **Adding a member to an existing group doesn't touch expense history.**
+  `addMember` (Group Settings, creator only) only inserts a `group_members`
+  row — the new member starts fresh for future expenses, never retroactively
+  added to old splits.
 - **Background write failures are silent.** `createGroup`, `createExpense`,
-  `deleteExpense`, `renameGroup`, `removeMember`, and `recordSettlement` all
+  `deleteExpense`, `renameGroup`, `removeMember`, `recordSettlement`,
+  `updateGroupBudget`, `addMember`, and the Profile-page update functions all
   roll back their optimistic cache update and log to the console if the
   background Supabase write fails, but there's no toast for it yet.
 - **There's no cross-tab/cross-device live sync.** A second tab or device
   only sees a change made elsewhere after its own next login or
   write-triggered resync — there's no Supabase Realtime subscription yet.
+- **The theme toggle defaults to light**, not your OS's dark-mode setting —
+  it only switches once you click it, then remembers your choice via
+  `localStorage` on later visits.

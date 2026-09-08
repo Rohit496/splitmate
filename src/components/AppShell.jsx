@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { content } from '../constant.js'
 import AccountMenu from './AccountMenu.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 
 /** Wordmark: the mascot from public/logo.svg, plus a two-tone name. */
 export function Wordmark({ to = '/' }) {
@@ -25,14 +26,19 @@ export const PAGE = 'mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8'
 
 /** Chrome for signed-in pages: sticky 56px navbar over the warm page canvas.
     The signed-in identity is a single AccountMenu dropdown (Profile,
-    Reports, Sign out) rather than separate nav links + a sign-out button. */
+    Reports, Sign out) rather than separate nav links + a sign-out button.
+    ThemeToggle sits just to its left, always visible rather than tucked
+    inside the dropdown. */
 export default function AppShell({ children }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-line bg-surface">
         <div className={`${PAGE} flex h-14 items-center justify-between`}>
           <Wordmark to="/dashboard" />
-          <AccountMenu />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <AccountMenu />
+          </div>
         </div>
       </header>
 

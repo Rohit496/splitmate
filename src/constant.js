@@ -60,6 +60,8 @@ export const content = {
     signOut: 'Sign out',
     signedOutToast: 'Signed out',
     accountMenuAria: 'Account menu',
+    darkModeAria: 'Switch to dark mode',
+    lightModeAria: 'Switch to light mode',
   },
 
   landing: {
