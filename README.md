@@ -38,6 +38,8 @@ behind Row Level Security, not local-only data.
   email, mobile number, and a password change
 - A single Account menu (Profile, Reports, Sign out) in the navbar, with a
   loading spinner instead of an empty flash while data syncs from Supabase
+- Toggle between light and dark themes from a button in the navbar; your
+  choice is remembered on your next visit
 - Toast confirmations for sign in, register, create group, add/delete expense,
   rename group, record a settlement, and sign out
 - Data lives in Supabase (Postgres + Auth) behind Row Level Security, not in
@@ -98,10 +100,11 @@ src/
   toast-theme.css         react-toastify palette overrides
 
   pages/                  one component per route
-  components/             shared UI: AppShell, AccountMenu, AuthLayout, modals,
-                          BudgetBar, ui.jsx primitives
+  components/             shared UI: AppShell, AccountMenu, ThemeToggle,
+                          AuthLayout, modals, BudgetBar, ui.jsx primitives
   context/AuthContext.jsx   Supabase Auth state + register/login/logout/password
                             reset/profile updates (name, email, mobile, photo, password)
+  context/ThemeContext.jsx  light/dark theme, persisted in localStorage
   data/supabaseClient.js    the one Supabase client (auth.* + from(...) tables)
   data/storage.js           the only module that reads/writes groups, expenses, and settlements
   hooks/useStore.js         useSyncExternalStore wrappers: re-render on any store
@@ -176,6 +179,10 @@ Row Level Security, not the client-side filtering in `storage.js`, is the
 real security boundary: every table is scoped to rows for groups the
 signed-in user belongs to, and the `anon` role has no grants on any of them.
 
+One exception: your light/dark theme preference is stored in `localStorage`
+(`splitmate_theme`), not Supabase — it's a per-browser UI setting, not app
+data, so it isn't synced across devices.
+
 ## Important notes
 
 - **Expenses are soft-deleted.** `deleteExpense` only sets `isDeleted: true`
@@ -206,3 +213,6 @@ signed-in user belongs to, and the `anon` role has no grants on any of them.
 - **There's no cross-tab/cross-device live sync.** A second tab or device
   only sees a change made elsewhere after its own next login or
   write-triggered resync — there's no Supabase Realtime subscription yet.
+- **The theme toggle defaults to light**, not your OS's dark-mode setting —
+  it only switches once you click it, then remembers your choice via
+  `localStorage` on later visits.
