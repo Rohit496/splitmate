@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Splitmate keeps track of who paid for what, then works out the fewest transfers that settle the group." />
+    <meta
+      name="description"
+      content="Splitmate keeps track of who paid for what, then works out the fewest transfers that settle the group."
+    />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <title>Splitmate</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,6 +15,18 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Applied synchronously, before first paint, so a returning dark-mode
+      // user never sees a flash of the light theme while React mounts.
+      // Kept in lockstep with ThemeContext.jsx's own read of this same key.
+      try {
+        if (localStorage.getItem('splitmate_theme') === 'dark') {
+          document.documentElement.classList.add('dark')
+        }
+      } catch {
+        // Private/blocked storage — fall back to the light default.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import './toast-theme.css'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { ThemeProvider } from './context/ThemeContext.jsx'
 import { content } from './constant.js'
 import RequireAuth from './components/RequireAuth.jsx'
 import Landing from './pages/Landing.jsx'
@@ -30,68 +31,70 @@ export default function App() {
   }, [])
 
   return (
-    <AuthProvider>
-      <ToastContainer
-        position={content.toast.position}
-        autoClose={content.toast.durationMs}
-        theme="colored"
-      />
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route
-          path="/dashboard"
-          element={
-            <RequireAuth>
-              <Dashboard />
-            </RequireAuth>
-          }
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastContainer
+          position={content.toast.position}
+          autoClose={content.toast.durationMs}
+          theme="colored"
         />
-        <Route
-          path="/reports"
-          element={
-            <RequireAuth>
-              <Reports />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <RequireAuth>
-              <Profile />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/group/new"
-          element={
-            <RequireAuth>
-              <CreateGroup />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/group/:id"
-          element={
-            <RequireAuth>
-              <GroupDetail />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/group/:id/settings"
-          element={
-            <RequireAuth>
-              <GroupSettings />
-            </RequireAuth>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AuthProvider>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireAuth>
+                <Dashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <RequireAuth>
+                <Reports />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <Profile />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/group/new"
+            element={
+              <RequireAuth>
+                <CreateGroup />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/group/:id"
+            element={
+              <RequireAuth>
+                <GroupDetail />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/group/:id/settings"
+            element={
+              <RequireAuth>
+                <GroupSettings />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }

@@ -12,7 +12,9 @@ const itemClass =
 /**
  * The signed-in identity in the navbar — a single dropdown (Profile,
  * Reports, Sign out) instead of a separate identity link, Reports link,
- * and Sign-out button. Not a full ARIA menu widget (no arrow-key roving
+ * and Sign-out button. The light/dark theme toggle lives just to this
+ * component's left in AppShell (ThemeToggle.jsx), not inside this dropdown.
+ * Not a full ARIA menu widget (no arrow-key roving
  * tabindex) — just Tab between items, Escape closes and returns focus to
  * the trigger, click-outside closes — the same lightweight interaction
  * philosophy ConfirmModal uses, scaled down for a non-modal popup. No
